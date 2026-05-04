@@ -1,8 +1,19 @@
 import { z } from "zod";
 
+const optionalString = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+  z.string().optional(),
+);
+
+const optionalUrl = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+  z.string().url().optional(),
+);
+
 const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().url(),
+  BETTER_AUTH_API_KEY: optionalString,
   DATABASE_URL: z.string().min(1),
   ALLOWED_USERS: z.string().min(1),
   DEFAULT_SHARED_WORKSPACE_NAME: z.string().min(1).default("Home"),
@@ -12,22 +23,26 @@ const envSchema = z.object({
   FEATURE_LIST_SHARING: z.enum(["true", "false"]).default("true"),
   FEATURE_CUSTOM_VIEWS: z.enum(["true", "false"]).default("false"),
   FEATURE_BILLING: z.enum(["true", "false"]).default("false"),
-  GOOGLE_CLIENT_ID: z.string().optional(),
-  GOOGLE_CLIENT_SECRET: z.string().optional(),
-  RESEND_API_KEY: z.string().optional(),
-  RESEND_FROM_EMAIL: z.string().email().optional(),
+  GOOGLE_CLIENT_ID: optionalString,
+  GOOGLE_CLIENT_SECRET: optionalString,
+  RESEND_API_KEY: optionalString,
+  RESEND_FROM_EMAIL: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().email().optional(),
+  ),
   S3_REGION: z.string().default("auto"),
-  S3_ENDPOINT: z.string().optional(),
-  S3_BUCKET: z.string().optional(),
-  S3_ACCESS_KEY_ID: z.string().optional(),
-  S3_SECRET_ACCESS_KEY: z.string().optional(),
-  S3_PUBLIC_BASE_URL: z.string().url().optional(),
+  S3_ENDPOINT: optionalString,
+  S3_BUCKET: optionalString,
+  S3_ACCESS_KEY_ID: optionalString,
+  S3_SECRET_ACCESS_KEY: optionalString,
+  S3_PUBLIC_BASE_URL: optionalUrl,
 });
 
 const parsed = envSchema.safeParse({
   BETTER_AUTH_SECRET:
     process.env.BETTER_AUTH_SECRET ?? "development-secret-development-secret",
   BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
+  BETTER_AUTH_API_KEY: process.env.BETTER_AUTH_API_KEY,
   DATABASE_URL:
     process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/omnilist",
   ALLOWED_USERS: process.env.ALLOWED_USERS ?? "example@example.com",

@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth/minimal";
+import { dash } from "@better-auth/infra";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { magicLink } from "better-auth/plugins/magic-link";
@@ -26,6 +27,9 @@ export const auth = betterAuth({
       }
     : undefined,
   plugins: [
+    dash({
+      apiKey: env.BETTER_AUTH_API_KEY,
+    }),
     magicLink({
       disableSignUp: false,
       sendMagicLink: async ({ email, url }) => {
