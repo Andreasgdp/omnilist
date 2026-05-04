@@ -7,9 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/features/auth/auth-client";
-import { authConfig } from "@/shared/lib/auth-config";
 
-export function SignInCard() {
+export function SignInCard({ hasGoogleAuth }: { hasGoogleAuth: boolean }) {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
@@ -23,7 +22,7 @@ export function SignInCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {authConfig.hasGoogleAuth ? (
+        {hasGoogleAuth ? (
           <Button
             className="w-full"
             onClick={async () => {
