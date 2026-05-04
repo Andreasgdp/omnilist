@@ -1,36 +1,274 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Omnilist
 
-## Getting Started
+Omnilist is a dynamic list app built for shared personal workflows and future SaaS expansion.
 
-First, run the development server:
+It is designed around:
+
+- shared workspaces
+- private and shared lists
+- user-defined list schemas
+- attachment-ready list items
+- open-source-friendly local development
+
+The current stack is:
+
+- Next.js 16
+- React 19
+- TypeScript
+- Tailwind CSS + shadcn/ui
+- Better Auth
+- Drizzle ORM
+- PostgreSQL
+
+## Status
+
+This project is early-stage but already includes:
+
+- Better Auth integration
+- local PostgreSQL via Docker Compose
+- generated Drizzle migrations
+- workspace, list, item, sharing, and asset schema models
+- a basic app shell and list flows
+
+## Requirements
+
+- Node.js 20+
+- npm
+- Docker + Docker Compose
+
+## Quick Start
+
+1. Install dependencies
+
+```bash
+npm install
+```
+
+2. Copy the env example
+
+```bash
+cp .env.example .env
+```
+
+3. Run the local bootstrap
+
+```bash
+npm run setup
+```
+
+4. Start the app
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+5. Open the app
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```text
+http://localhost:3000
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+`npm run setup` will:
 
-## Learn More
+1. start the Docker Postgres container
+2. apply Drizzle migrations
+3. run a DB/auth readiness check
+4. seed a default local user and workspace
 
-To learn more about Next.js, take a look at the following resources:
+## Local Database
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+The local database runs in Docker using `compose.yml`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Default local connection string:
 
-## Deploy on Vercel
+```text
+postgres://postgres:postgres@localhost:5432/omnilist
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Useful commands:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run setup
+npm run check:ready
+npm run db:up
+npm run db:down
+npm run db:logs
+npm run db:reset
+npm run db:seed
+npm run db:migrate
+npm run db:generate
+npm run db:push
+```
+
+What they do:
+
+- `setup`: bootstrap the local database and seed data
+- `check:ready`: verify required env vars and database connectivity
+- `db:up`: start local Postgres in Docker
+- `db:down`: stop the container
+- `db:logs`: inspect Postgres logs
+- `db:reset`: destroy the local DB volume and recreate it
+- `db:seed`: seed the default local user and workspace
+- `db:migrate`: apply generated Drizzle migrations
+- `db:generate`: generate a new migration from the current schema
+- `db:push`: push schema changes directly without a generated migration
+
+For normal development, prefer:
+
+1. update schema files
+2. run `npm run db:generate`
+3. run `npm run db:migrate`
+
+## Environment Variables
+
+Use `.env.example` as the source of truth.
+
+Important variables:
+
+- `BETTER_AUTH_SECRET`
+- `BETTER_AUTH_URL`
+- `BETTER_AUTH_API_KEY`
+- `BETTER_AUTH_TRUSTED_ORIGINS`
+- `DATABASE_URL`
+- `ALLOWED_USERS`
+- `SEED_USER_EMAIL`
+- `SEED_USER_NAME`
+- `SEED_WORKSPACE_SLUG`
+- `SEED_WORKSPACE_NAME`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+
+### Local auth defaults
+
+For local development, these are the relevant values:
+
+```text
+BETTER_AUTH_URL=http://localhost:3000
+BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000,https://www.omnilist.site
+DATABASE_URL=postgres://postgres:postgres@localhost:5432/omnilist
+```
+
+### Allowed users
+
+The app currently enforces an allowlist of emails.
+
+Example:
+
+```text
+ALLOWED_USERS=you@example.com,partner@example.com
+```
+
+If your email is not listed, auth will succeed but app access will redirect to the unauthorized flow.
+
+### Local seed defaults
+
+The setup and seed scripts create a default local user and workspace.
+
+Defaults:
+
+```text
+SEED_USER_EMAIL=local@example.com
+SEED_USER_NAME=Local User
+SEED_WORKSPACE_SLUG=home
+SEED_WORKSPACE_NAME=Home
+```
+
+You can override them in `.env` before running:
+
+```bash
+npm run db:seed
+```
+
+## Google OAuth Setup
+
+Google sign-in is optional.
+
+If `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are not set, the Google button is hidden.
+
+In Google Cloud Console, create a Web OAuth client and use:
+
+Authorized JavaScript origins:
+
+```text
+http://localhost:3000
+https://www.omnilist.site
+```
+
+Authorized redirect URIs:
+
+```text
+http://localhost:3000/api/auth/oauth2/callback/google
+https://www.omnilist.site/api/auth/oauth2/callback/google
+```
+
+## Better Auth Dash Setup
+
+The Better Auth Dash integration is wired through `@better-auth/infra`.
+
+Important:
+
+- `BETTER_AUTH_SECRET` is your app secret and should be generated by you
+- `BETTER_AUTH_API_KEY` is the Dash API key from Better Auth
+- production should use the canonical host exactly
+
+For production, use:
+
+```text
+BETTER_AUTH_URL=https://www.omnilist.site
+BETTER_AUTH_TRUSTED_ORIGINS=http://localhost:3000,https://www.omnilist.site
+```
+
+If your non-www host redirects to `www`, make sure Better Auth Dash is configured with the `www` host directly.
+
+## Project Structure
+
+```text
+src/
+  app/                  Next.js app routes
+  db/                   Drizzle client and schema
+  features/             Feature-specific server/UI code
+  shared/               Shared utilities and UI shell
+drizzle/                Generated SQL migrations and metadata
+compose.yml             Local PostgreSQL service
+```
+
+## Development Workflow
+
+Typical workflow:
+
+1. bootstrap locally with `npm run setup`
+2. run the app with `npm run dev`
+3. make schema changes in `src/db/schema`
+4. generate migrations with `npm run db:generate`
+5. apply them with `npm run db:migrate`
+6. rerun `npm run db:seed` if you want a clean default local record set after a reset
+
+## Quality Checks
+
+Run the standard checks before opening a PR:
+
+```bash
+npm run lint
+npm run build
+```
+
+## Open Source Notes
+
+This project is intended to be runnable without vendor lock-in for core development.
+
+Today that means:
+
+- local PostgreSQL via Docker
+- Better Auth with self-hosted app-side config
+- optional external services for Google OAuth, Resend, and object storage
+
+## Roadmap
+
+See:
+
+- `docs/v2-draft.md`
+- `docs/auth-setup.md`
+
+## License
+
+License is not added yet.
