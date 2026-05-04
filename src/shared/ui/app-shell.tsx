@@ -64,14 +64,27 @@ export function AppShell({
           </div>
         </div>
 
-        <div className="mx-auto flex max-w-7xl gap-2 overflow-x-auto px-4 py-3 text-sm sm:px-6">
-          <NavLink className="inline-flex rounded-full px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground" href={routes.workspace(workspaceSlug)}>
+        <div className="mx-auto hidden max-w-7xl gap-2 overflow-x-auto px-4 py-3 text-sm sm:px-6 lg:flex">
+          <NavLink
+            className="inline-flex rounded-full px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            activeClassName="bg-muted text-foreground shadow-sm"
+            href={routes.workspace(workspaceSlug)}
+          >
             Overview
           </NavLink>
-          <NavLink className="inline-flex rounded-full px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground" href={routes.workspaceLists(workspaceSlug)}>
+          <NavLink
+            className="inline-flex rounded-full px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            activeClassName="bg-muted text-foreground shadow-sm"
+            activePrefixes={[routes.workspaceLists(workspaceSlug)]}
+            href={routes.workspaceLists(workspaceSlug)}
+          >
             Lists
           </NavLink>
-          <NavLink className="inline-flex rounded-full px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground" href={routes.newList(workspaceSlug)}>
+          <NavLink
+            className="inline-flex rounded-full px-3 py-1.5 text-sm text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            activeClassName="bg-muted text-foreground shadow-sm"
+            href={routes.newList(workspaceSlug)}
+          >
             New list
           </NavLink>
         </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTransition } from "react";
 
 import { cn } from "@/lib/utils";
@@ -9,19 +9,30 @@ import { cn } from "@/lib/utils";
 export function NavLink({
   href,
   className,
+  activeClassName,
+  activePrefixes,
   children,
 }: {
   href: string;
   className?: string;
+  activeClassName?: string;
+  activePrefixes?: string[];
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
+  const isActive = pathname === href || (activePrefixes ?? []).some((prefix) => pathname.startsWith(prefix));
 
   return (
     <Link
       href={href}
-      className={cn("relative", className, isPending && "scale-[0.99] opacity-85")}
+      className={cn(
+        "relative",
+        className,
+        isActive && activeClassName,
+        isPending && "scale-[0.99] opacity-85",
+      )}
       onClick={(event) => {
         if (
           event.defaultPrevented ||
