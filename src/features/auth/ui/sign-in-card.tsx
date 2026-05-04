@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,8 +15,17 @@ export function SignInCard({ hasGoogleAuth }: { hasGoogleAuth: boolean }) {
   const [isPending, setIsPending] = useState(false);
 
   return (
-    <Card className="w-full max-w-md border-0 shadow-2xl shadow-primary/10">
+    <Card className="w-full max-w-md border border-border/50 bg-card/90 shadow-2xl shadow-primary/10 backdrop-blur">
       <CardHeader>
+        <div className="mb-2 flex items-center gap-3">
+          <div className="flex size-14 items-center justify-center rounded-2xl bg-white/70 shadow-sm ring-1 ring-black/5 dark:bg-white/10 dark:ring-white/10">
+            <Image src="/omnilist-logo.png" alt="Omnilist logo" width={42} height={42} className="size-10" />
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.25em] text-primary/80">Omnilist</p>
+            <p className="text-sm text-muted-foreground">Your shared lists, simplified.</p>
+          </div>
+        </div>
         <CardTitle>Sign in to Omnilist</CardTitle>
         <CardDescription>
           Use Google or request a magic link for one of the allowed accounts.

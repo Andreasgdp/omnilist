@@ -4,6 +4,7 @@ import { index, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex } from "dri
 import { users } from "@/db/schema/auth";
 import { itemAssets } from "@/db/schema/assets";
 import { workspaces } from "@/db/schema/workspaces";
+import type { ListQueryState } from "@/features/lists/lib/query-state";
 import type { FieldDefinition } from "@/shared/lib/list-schema";
 
 export const listVisibilityEnum = pgEnum("list_visibility", ["private", "workspace"]);
@@ -59,6 +60,23 @@ export const listItems = pgTable(
   }),
 );
 
+export const listViews = pgTable(
+  "list_views",
+  {
+    id: text("id").primaryKey(),
+    listId: text("list_id").notNull().references(() => lists.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    state: jsonb("state").$type<ListQueryState>().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => ({
+    listUserIndex: index("list_views_list_user_idx").on(table.listId, table.userId),
+    uniqueNameIndex: uniqueIndex("list_views_list_user_name_idx").on(table.listId, table.userId, table.name),
+  }),
+);
+
 export const listsRelations = relations(lists, ({ one, many }) => ({
   workspace: one(workspaces, {
     fields: [lists.workspaceId],
@@ -70,6 +88,7 @@ export const listsRelations = relations(lists, ({ one, many }) => ({
   }),
   members: many(listMembers),
   items: many(listItems),
+  views: many(listViews),
 }));
 
 export const listMembersRelations = relations(listMembers, ({ one }) => ({
@@ -101,4 +120,15 @@ export const listItemsRelations = relations(listItems, ({ one, many }) => ({
     references: [users.id],
   }),
   assets: many(itemAssets),
+}));
+
+export const listViewsRelations = relations(listViews, ({ one }) => ({
+  list: one(lists, {
+    fields: [listViews.listId],
+    references: [lists.id],
+  }),
+  user: one(users, {
+    fields: [listViews.userId],
+    references: [users.id],
+  }),
 }));

@@ -6,7 +6,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 
 import { db } from "@/db/client";
-import { listItems, listMembers, lists, workspaceMembers } from "@/db/schema";
+import { listItems, listMembers, lists, listViews, workspaceMembers } from "@/db/schema";
+import { parseListQueryState } from "@/features/lists/lib/query-state";
 import { requireApprovedSession } from "@/features/auth/server/guard";
 import { requireListAccess } from "@/features/lists/server/access";
 import { buildItemSchema, listSchemaDefinitionSchema } from "@/shared/lib/list-schema";
@@ -169,4 +170,68 @@ export const shareListAction = async (formData: FormData) => {
   }
 
   revalidatePath(routes.listShare(input.workspaceSlug, input.listId));
+};
+
+const saveViewSchema = z.object({
+  listId: z.string().uuid(),
+  workspaceId: z.string().uuid(),
+  workspaceSlug: z.string().min(1),
+  name: z.string().min(1),
+  sortField: z.string().optional(),
+  sortDir: z.enum(["asc", "desc"]).optional(),
+  filters: z.string().optional(),
+});
+
+export const saveListViewAction = async (formData: FormData) => {
+  const session = await requireApprovedSession();
+  const input = saveViewSchema.parse(Object.fromEntries(formData));
+
+  const workspaceMembership = await db.query.workspaceMembers.findFirst({
+    where: and(
+      eq(workspaceMembers.workspaceId, input.workspaceId),
+      eq(workspaceMembers.userId, session.user.id),
+    ),
+  });
+
+  if (!workspaceMembership) {
+    throw new Error("Workspace access denied");
+  }
+
+  await requireListAccess({
+    listId: input.listId,
+    userId: session.user.id,
+    workspaceId: input.workspaceId,
+    workspaceRole: workspaceMembership.role,
+  });
+
+  const queryState = parseListQueryState({
+    sortField: input.sortField,
+    sortDir: input.sortDir,
+    filters: input.filters,
+  });
+
+  const existing = await db.query.listViews.findFirst({
+    where: and(
+      eq(listViews.listId, input.listId),
+      eq(listViews.userId, session.user.id),
+      eq(listViews.name, input.name),
+    ),
+  });
+
+  if (existing) {
+    await db
+      .update(listViews)
+      .set({ state: queryState, updatedAt: new Date() })
+      .where(eq(listViews.id, existing.id));
+  } else {
+    await db.insert(listViews).values({
+      id: createId(),
+      listId: input.listId,
+      userId: session.user.id,
+      name: input.name,
+      state: queryState,
+    });
+  }
+
+  revalidatePath(routes.list(input.workspaceSlug, input.listId));
 };

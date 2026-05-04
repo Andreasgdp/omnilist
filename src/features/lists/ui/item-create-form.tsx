@@ -24,13 +24,16 @@ export function ItemCreateForm({ workspaceId, workspaceSlug, listId, fields }: P
   const payload = useMemo(() => JSON.stringify(values), [values]);
 
   return (
-    <form action={createItemAction} className="space-y-4 rounded-lg border bg-card p-4">
+    <form action={createItemAction} className="space-y-4 rounded-2xl border border-border/60 bg-card/90 p-5 shadow-sm">
       <input type="hidden" name="workspaceId" value={workspaceId} />
       <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
       <input type="hidden" name="listId" value={listId} />
       <input type="hidden" name="payload" value={payload} readOnly />
 
-      <h3 className="text-lg font-semibold">Add item</h3>
+      <div>
+        <h3 className="text-lg font-semibold">Add item</h3>
+        <p className="text-sm text-muted-foreground">Capture a new row using the dynamic list schema.</p>
+      </div>
 
       {fields.map((field) => {
         if (field.type === "boolean") {
@@ -102,7 +105,7 @@ export function ItemCreateForm({ workspaceId, workspaceSlug, listId, fields }: P
         );
       })}
 
-      <Button type="submit">Add item</Button>
+      <Button type="submit" className="rounded-full px-5">Add item</Button>
     </form>
   );
 }

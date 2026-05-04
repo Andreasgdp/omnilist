@@ -8,6 +8,7 @@ It is designed around:
 - private and shared lists
 - user-defined list schemas
 - attachment-ready list items
+- light and dark mode
 - open-source-friendly local development
 
 The current stack is:
@@ -73,7 +74,7 @@ http://localhost:3000
 1. start the Docker Postgres container
 2. apply Drizzle migrations
 3. run a DB/auth readiness check
-4. seed a default local user and workspace
+4. seed a default local user, workspace, demo list, and sample items
 
 ## Local Database
 
@@ -171,6 +172,7 @@ SEED_USER_EMAIL=local@example.com
 SEED_USER_NAME=Local User
 SEED_WORKSPACE_SLUG=home
 SEED_WORKSPACE_NAME=Home
+SEED_DEMO_LIST_NAME=Weekend Trip Planner
 ```
 
 You can override them in `.env` before running:
@@ -178,6 +180,8 @@ You can override them in `.env` before running:
 ```bash
 npm run db:seed
 ```
+
+The seed also creates a demo shared list with sample trip-planning items so the local app has meaningful data on first boot.
 
 ## Google OAuth Setup
 

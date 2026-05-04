@@ -40,3 +40,10 @@
 - Add upload widgets to `ItemCreateForm`
 - Add list edit and delete actions
 - Add audit-friendly events for sharing and visibility changes
+
+## Current V2 Progress
+
+- Added a first pass of saved custom views with a `list_views` table
+- Added URL-based sort and filter state on list detail pages
+- Added save-view actions and quick view chips for personal presets
+- Refined the workspace overview and list index toward a more colorful, card-driven visual style

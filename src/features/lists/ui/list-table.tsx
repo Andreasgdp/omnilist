@@ -10,7 +10,7 @@ export function ListTable({
   items: Array<{ id: string; data: Record<string, unknown> }>;
 }) {
   return (
-    <div className="rounded-lg border bg-card">
+    <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/90 shadow-sm">
       <Table>
         <TableHeader>
           <TableRow>

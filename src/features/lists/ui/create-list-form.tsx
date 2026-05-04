@@ -8,7 +8,7 @@ import { ListSchemaForm } from "@/features/lists/ui/list-schema-form";
 
 export function CreateListForm({ workspaceId, workspaceSlug }: { workspaceId: string; workspaceSlug: string }) {
   return (
-    <form action={createListAction} className="space-y-6">
+    <form action={createListAction} className="space-y-6 rounded-2xl">
       <input type="hidden" name="workspaceId" value={workspaceId} />
       <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
 
@@ -40,7 +40,7 @@ export function CreateListForm({ workspaceId, workspaceSlug }: { workspaceId: st
         <ListSchemaForm />
       </div>
 
-      <Button type="submit">Create list</Button>
+      <Button type="submit" className="rounded-full px-5">Create list</Button>
     </form>
   );
 }
