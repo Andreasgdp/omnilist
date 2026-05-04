@@ -7,9 +7,8 @@ import { magicLink } from "better-auth/plugins/magic-link";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 import { sendMagicLinkEmail } from "@/features/auth/server/mailer";
+import { authConfig } from "@/shared/lib/auth-config";
 import { env } from "@/shared/lib/env";
-
-const hasGoogle = Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
 
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
@@ -18,7 +17,7 @@ export const auth = betterAuth({
     provider: "pg",
     schema,
   }),
-  socialProviders: hasGoogle
+  socialProviders: authConfig.hasGoogleAuth
     ? {
         google: {
           clientId: env.GOOGLE_CLIENT_ID!,

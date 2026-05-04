@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/features/auth/auth-client";
+import { authConfig } from "@/shared/lib/auth-config";
 
 export function SignInCard() {
   const [email, setEmail] = useState("");
@@ -22,20 +23,22 @@ export function SignInCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Button
-          className="w-full"
-          onClick={async () => {
-            setIsPending(true);
-            try {
-              await authClient.signIn.social({ provider: "google", callbackURL: "/" });
-            } finally {
-              setIsPending(false);
-            }
-          }}
-          disabled={isPending}
-        >
-          Continue with Google
-        </Button>
+        {authConfig.hasGoogleAuth ? (
+          <Button
+            className="w-full"
+            onClick={async () => {
+              setIsPending(true);
+              try {
+                await authClient.signIn.social({ provider: "google", callbackURL: "/" });
+              } finally {
+                setIsPending(false);
+              }
+            }}
+            disabled={isPending}
+          >
+            Continue with Google
+          </Button>
+        ) : null}
 
         <div className="space-y-2">
           <Label htmlFor="email">Magic link email</Label>

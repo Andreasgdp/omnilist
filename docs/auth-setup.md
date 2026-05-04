@@ -23,6 +23,7 @@
 - If `dash()` is mounted, `/api/auth/dash/config` exists
 - An unauthenticated direct browser request may return `401`
 - A `404` usually means the deployed code does not include the dash plugin
+- A `401` from the non-canonical host can also happen if the request is redirected and the `Authorization` header is dropped
 
 ## Production checklist
 
@@ -32,4 +33,11 @@
    - `BETTER_AUTH_SECRET=<random 32+ char secret>`
    - `BETTER_AUTH_API_KEY=<dash api key>`
 3. Redeploy
-4. Confirm `https://www.omnilist.site/api/auth/dash/config` no longer returns `404`
+4. Make sure Better Auth Dash is configured to use the same canonical URL: `https://www.omnilist.site`
+5. Confirm `https://www.omnilist.site/api/auth/dash/config` no longer returns `404`
+
+## Canonical domain
+
+- `https://omnilist.site` currently redirects to `https://www.omnilist.site`
+- If Better Auth Dash is still calling `https://omnilist.site/api/auth/dash/config`, the redirect can strip the `Authorization` header
+- The safest fix is to make Better Auth Dash use `https://www.omnilist.site` directly
