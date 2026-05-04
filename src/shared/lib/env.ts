@@ -14,6 +14,7 @@ const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32),
   BETTER_AUTH_URL: z.string().url(),
   BETTER_AUTH_API_KEY: optionalString,
+  BETTER_AUTH_TRUSTED_ORIGINS: optionalString,
   DATABASE_URL: z.string().min(1),
   ALLOWED_USERS: z.string().min(1),
   DEFAULT_SHARED_WORKSPACE_NAME: z.string().min(1).default("Home"),
@@ -43,6 +44,8 @@ const parsed = envSchema.safeParse({
     process.env.BETTER_AUTH_SECRET ?? "development-secret-development-secret",
   BETTER_AUTH_URL: process.env.BETTER_AUTH_URL ?? "http://localhost:3000",
   BETTER_AUTH_API_KEY: process.env.BETTER_AUTH_API_KEY,
+  BETTER_AUTH_TRUSTED_ORIGINS:
+    process.env.BETTER_AUTH_TRUSTED_ORIGINS ?? "http://localhost:3000",
   DATABASE_URL:
     process.env.DATABASE_URL ?? "postgres://postgres:postgres@localhost:5432/omnilist",
   ALLOWED_USERS: process.env.ALLOWED_USERS ?? "example@example.com",
@@ -73,4 +76,8 @@ if (!parsed.success) {
 export const env = parsed.data;
 export const allowedUserEmails = env.ALLOWED_USERS.split(",")
   .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
+export const trustedOrigins = (env.BETTER_AUTH_TRUSTED_ORIGINS ?? "")
+  .split(",")
+  .map((origin) => origin.trim())
   .filter(Boolean);

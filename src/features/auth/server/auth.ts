@@ -7,13 +7,14 @@ import { magicLink } from "better-auth/plugins/magic-link";
 import { db } from "@/db/client";
 import * as schema from "@/db/schema";
 import { sendMagicLinkEmail } from "@/features/auth/server/mailer";
-import { env } from "@/shared/lib/env";
+import { env, trustedOrigins } from "@/shared/lib/env";
 
 const hasGoogleAuth = Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
 
 export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
+  trustedOrigins,
   database: drizzleAdapter(db, {
     provider: "pg",
     schema,
