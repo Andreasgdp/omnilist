@@ -26,7 +26,7 @@ export function ListFilters({ fields, currentSortField, currentSortDir }: Props)
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card/90 p-5 shadow-sm">
-      <div className="grid gap-4 md:grid-cols-[1fr_160px_1fr_auto]">
+      <div className="grid gap-4 lg:grid-cols-[1fr_160px_1fr_auto]">
         <div className="space-y-2">
           <Label>Sort field</Label>
           <Select
@@ -64,8 +64,8 @@ export function ListFilters({ fields, currentSortField, currentSortDir }: Props)
         </div>
 
         <div className="space-y-2">
-              <Label>Contains filter</Label>
-              <div className="flex gap-2">
+          <Label>Contains filter</Label>
+          <div className="flex flex-col gap-2 sm:flex-row">
             <Select
               value={filterField}
               onValueChange={(value) => {
@@ -89,7 +89,7 @@ export function ListFilters({ fields, currentSortField, currentSortDir }: Props)
           </div>
         </div>
 
-        <div className="flex items-end gap-2">
+        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-end">
           <Button
             type="button"
             className="rounded-full px-5"

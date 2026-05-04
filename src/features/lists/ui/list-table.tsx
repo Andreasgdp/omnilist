@@ -11,6 +11,7 @@ export function ListTable({
 }) {
   return (
     <div className="overflow-hidden rounded-2xl border border-border/60 bg-card/90 shadow-sm">
+      <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
@@ -55,6 +56,7 @@ export function ListTable({
           )}
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }

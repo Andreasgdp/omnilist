@@ -20,13 +20,13 @@ export default async function ListsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-2xl font-semibold">Lists</h2>
           <p className="text-sm text-muted-foreground">Private and shared lists inside this workspace.</p>
         </div>
 
-        <Link className="inline-flex h-10 items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm" href={routes.newList(workspace.slug)}>
+        <Link className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" href={routes.newList(workspace.slug)}>
           New list
         </Link>
       </div>
@@ -42,7 +42,7 @@ export default async function ListsPage({
 
           return (
             <Link key={list.id} href={routes.list(workspace.slug, list.id)} className="block">
-              <Card className={`border-border/60 bg-gradient-to-br ${palette} shadow-sm transition hover:-translate-y-0.5 hover:shadow-md`}>
+              <Card className={`border-border/60 bg-gradient-to-br ${palette} shadow-sm transition duration-200 hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-md`}>
                 <CardHeader>
                   <div className="flex items-center justify-between gap-3">
                     <CardTitle className="text-lg">{list.name}</CardTitle>

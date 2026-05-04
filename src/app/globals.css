@@ -132,3 +132,13 @@
     @apply font-sans;
   }
 }
+
+@layer utilities {
+  .motion-card {
+    @apply transition duration-200 ease-out hover:-translate-y-0.5 hover:shadow-md;
+  }
+
+  .motion-pill {
+    @apply transition duration-200 ease-out hover:-translate-y-0.5;
+  }
+}

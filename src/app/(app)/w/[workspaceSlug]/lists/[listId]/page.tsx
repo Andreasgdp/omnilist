@@ -36,23 +36,23 @@ export default async function ListPage({
     <div className="space-y-6">
       <Card className="border-border/60 bg-card/90 shadow-sm">
         <CardHeader>
-          <div className="flex items-center justify-between gap-3">
-            <div>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <CardTitle>{detail.list.name}</CardTitle>
               <CardDescription>{detail.list.description || "No description yet."}</CardDescription>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge variant="outline">{detail.role}</Badge>
               <Badge>{detail.list.visibility}</Badge>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="flex gap-3">
-          <Link className="inline-flex h-10 items-center rounded-full border border-border/70 px-4 text-sm font-medium transition hover:bg-muted" href={routes.listSettings(workspace.slug, detail.list.id)}>
+        <CardContent className="flex flex-col gap-3 sm:flex-row">
+          <Link className="inline-flex h-10 items-center justify-center rounded-full border border-border/70 px-4 text-sm font-medium transition hover:-translate-y-0.5 hover:bg-muted" href={routes.listSettings(workspace.slug, detail.list.id)}>
             Settings
           </Link>
-          <Link className="inline-flex h-10 items-center rounded-full border border-border/70 px-4 text-sm font-medium transition hover:bg-muted" href={routes.listShare(workspace.slug, detail.list.id)}>
+          <Link className="inline-flex h-10 items-center justify-center rounded-full border border-border/70 px-4 text-sm font-medium transition hover:-translate-y-0.5 hover:bg-muted" href={routes.listShare(workspace.slug, detail.list.id)}>
             Share
           </Link>
         </CardContent>
