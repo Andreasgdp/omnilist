@@ -67,6 +67,8 @@ export const listViews = pgTable(
     listId: text("list_id").notNull().references(() => lists.id, { onDelete: "cascade" }),
     userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
+    isFavorite: text("is_favorite").notNull().default("false"),
+    isDefault: text("is_default").notNull().default("false"),
     state: jsonb("state").$type<ListQueryState>().notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

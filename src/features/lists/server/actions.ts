@@ -235,3 +235,70 @@ export const saveListViewAction = async (formData: FormData) => {
 
   revalidatePath(routes.list(input.workspaceSlug, input.listId));
 };
+
+const manageViewSchema = z.object({
+  viewId: z.string().uuid(),
+  listId: z.string().uuid(),
+  workspaceSlug: z.string().min(1),
+});
+
+export const deleteListViewAction = async (formData: FormData) => {
+  const session = await requireApprovedSession();
+  const input = manageViewSchema.parse(Object.fromEntries(formData));
+
+  const view = await db.query.listViews.findFirst({
+    where: and(eq(listViews.id, input.viewId), eq(listViews.userId, session.user.id)),
+  });
+
+  if (!view) {
+    throw new Error("View not found");
+  }
+
+  await db.delete(listViews).where(eq(listViews.id, input.viewId));
+  revalidatePath(routes.list(input.workspaceSlug, input.listId));
+};
+
+export const favoriteListViewAction = async (formData: FormData) => {
+  const session = await requireApprovedSession();
+  const input = manageViewSchema.parse(Object.fromEntries(formData));
+
+  const view = await db.query.listViews.findFirst({
+    where: and(eq(listViews.id, input.viewId), eq(listViews.userId, session.user.id)),
+  });
+
+  if (!view) {
+    throw new Error("View not found");
+  }
+
+  await db
+    .update(listViews)
+    .set({ isFavorite: view.isFavorite === "true" ? "false" : "true", updatedAt: new Date() })
+    .where(eq(listViews.id, input.viewId));
+
+  revalidatePath(routes.list(input.workspaceSlug, input.listId));
+};
+
+export const setDefaultListViewAction = async (formData: FormData) => {
+  const session = await requireApprovedSession();
+  const input = manageViewSchema.parse(Object.fromEntries(formData));
+
+  const view = await db.query.listViews.findFirst({
+    where: and(eq(listViews.id, input.viewId), eq(listViews.userId, session.user.id)),
+  });
+
+  if (!view) {
+    throw new Error("View not found");
+  }
+
+  await db
+    .update(listViews)
+    .set({ isDefault: "false", updatedAt: new Date() })
+    .where(and(eq(listViews.listId, view.listId), eq(listViews.userId, session.user.id)));
+
+  await db
+    .update(listViews)
+    .set({ isDefault: "true", updatedAt: new Date() })
+    .where(eq(listViews.id, input.viewId));
+
+  revalidatePath(routes.list(input.workspaceSlug, input.listId));
+};

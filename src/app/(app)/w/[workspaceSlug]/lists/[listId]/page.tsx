@@ -63,8 +63,12 @@ export default async function ListPage({
             id: view.id,
             name: view.name,
             state: view.state,
+            isFavorite: view.isFavorite,
+            isDefault: view.isDefault,
           }))}
           basePath={routes.list(workspace.slug, detail.list.id)}
+          listId={detail.list.id}
+          workspaceSlug={workspace.slug}
         />
         <ListFilters
           fields={detail.fields}

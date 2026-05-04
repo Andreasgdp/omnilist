@@ -5,7 +5,9 @@ import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { auth } from "@/features/auth/server/auth";
 import { routes } from "@/shared/lib/routes";
+import { MobileNav } from "@/shared/ui/mobile-nav";
 import { NavLink } from "@/shared/ui/nav-link";
+import { PageTransition } from "@/shared/ui/page-transition";
 import { ThemeToggleShell } from "@/shared/ui/theme-toggle-shell";
 
 export function AppShell({
@@ -75,7 +77,10 @@ export function AppShell({
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8">{children}</main>
+      <main className="mx-auto max-w-7xl px-4 py-6 pb-28 sm:px-6 sm:py-8 lg:pb-8">
+        <PageTransition>{children}</PageTransition>
+      </main>
+      <MobileNav workspaceSlug={workspaceSlug} />
     </div>
   );
 }

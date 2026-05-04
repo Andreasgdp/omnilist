@@ -15,6 +15,13 @@
       "when": 1777932087020,
       "tag": "0001_wet_alex_wilder",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1777933584550,
+      "tag": "0002_sparkling_punisher",
+      "breakpoints": true
     }
   ]
 }
