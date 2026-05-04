@@ -1,4 +1,3 @@
-import Link from "next/link";
 import Image from "next/image";
 
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { getListsForWorkspace } from "@/features/lists/server/queries";
 import { requireWorkspaceAccess } from "@/features/workspaces/server/access";
 import { routes } from "@/shared/lib/routes";
+import { NavLink } from "@/shared/ui/nav-link";
 
 export default async function WorkspaceOverviewPage({
   params,
@@ -48,12 +48,12 @@ export default async function WorkspaceOverviewPage({
             </div>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
-              <Link className="inline-flex h-11 items-center justify-center rounded-full bg-foreground px-5 text-sm font-medium text-background shadow-sm transition hover:-translate-y-0.5 hover:opacity-90 dark:bg-primary dark:text-primary-foreground" href={routes.newList(workspace.slug)}>
+              <NavLink className="inline-flex h-11 items-center justify-center rounded-full bg-foreground px-5 text-sm font-medium text-background shadow-sm transition hover:-translate-y-0.5 hover:opacity-90 dark:bg-primary dark:text-primary-foreground" href={routes.newList(workspace.slug)}>
                 Create custom list
-              </Link>
-              <Link className="inline-flex h-11 items-center justify-center rounded-full border border-border/70 bg-background/70 px-5 text-sm font-medium text-foreground transition hover:-translate-y-0.5 hover:bg-background dark:bg-card/70" href={routes.workspaceLists(workspace.slug)}>
+              </NavLink>
+              <NavLink className="inline-flex h-11 items-center justify-center rounded-full border border-border/70 bg-background/70 px-5 text-sm font-medium text-foreground transition hover:-translate-y-0.5 hover:bg-background dark:bg-card/70" href={routes.workspaceLists(workspace.slug)}>
                 Browse lists
-              </Link>
+              </NavLink>
             </div>
           </div>
 
@@ -68,7 +68,7 @@ export default async function WorkspaceOverviewPage({
                 ][index % 4];
 
                 return (
-                  <Link
+                  <NavLink
                     key={list.id}
                     href={routes.list(workspace.slug, list.id)}
                     className={`block rounded-3xl border border-white/40 p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-md ${palette}`}
@@ -82,7 +82,7 @@ export default async function WorkspaceOverviewPage({
                     <p className="mt-2 line-clamp-2 text-sm text-current/75">
                       {list.description || "Dynamic shared board ready for custom fields."}
                     </p>
-                  </Link>
+                  </NavLink>
                 );
               })}
 
@@ -126,9 +126,9 @@ export default async function WorkspaceOverviewPage({
               </div>
             </div>
 
-            <Link className="inline-flex h-10 items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm" href={routes.newList(workspace.slug)}>
+            <NavLink className="inline-flex h-10 items-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm" href={routes.newList(workspace.slug)}>
               Create a new list
-            </Link>
+            </NavLink>
           </CardContent>
         </Card>
 
@@ -137,9 +137,9 @@ export default async function WorkspaceOverviewPage({
             <CardTitle>Quick links</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Link className="inline-flex h-10 w-full items-center rounded-full border border-border/70 px-4 text-sm font-medium transition hover:bg-muted" href={routes.workspaceLists(workspace.slug)}>
+            <NavLink className="inline-flex h-10 w-full items-center rounded-full border border-border/70 px-4 text-sm font-medium transition hover:bg-muted" href={routes.workspaceLists(workspace.slug)}>
               All lists
-            </Link>
+            </NavLink>
             <div className="rounded-3xl bg-secondary/60 p-4 text-sm text-secondary-foreground dark:bg-secondary/40">
               Seed data creates a demo workspace list so the local app is useful on first boot.
             </div>

@@ -1,5 +1,3 @@
-import Link from "next/link";
-
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getListDetail } from "@/features/lists/server/queries";
@@ -10,6 +8,7 @@ import { SaveViewForm } from "@/features/lists/ui/save-view-form";
 import { ViewChipList } from "@/features/lists/ui/view-chip-list";
 import { requireWorkspaceAccess } from "@/features/workspaces/server/access";
 import { routes } from "@/shared/lib/routes";
+import { NavLink } from "@/shared/ui/nav-link";
 
 export default async function ListPage({
   params,
@@ -49,12 +48,12 @@ export default async function ListPage({
           </div>
         </CardHeader>
         <CardContent className="flex flex-col gap-3 sm:flex-row">
-          <Link className="inline-flex h-10 items-center justify-center rounded-full border border-border/70 px-4 text-sm font-medium transition hover:-translate-y-0.5 hover:bg-muted" href={routes.listSettings(workspace.slug, detail.list.id)}>
+          <NavLink className="inline-flex h-10 items-center justify-center rounded-full border border-border/70 px-4 text-sm font-medium transition hover:-translate-y-0.5 hover:bg-muted" href={routes.listSettings(workspace.slug, detail.list.id)}>
             Settings
-          </Link>
-          <Link className="inline-flex h-10 items-center justify-center rounded-full border border-border/70 px-4 text-sm font-medium transition hover:-translate-y-0.5 hover:bg-muted" href={routes.listShare(workspace.slug, detail.list.id)}>
+          </NavLink>
+          <NavLink className="inline-flex h-10 items-center justify-center rounded-full border border-border/70 px-4 text-sm font-medium transition hover:-translate-y-0.5 hover:bg-muted" href={routes.listShare(workspace.slug, detail.list.id)}>
             Share
-          </Link>
+          </NavLink>
         </CardContent>
       </Card>
 

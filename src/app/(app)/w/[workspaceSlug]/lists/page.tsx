@@ -1,10 +1,9 @@
-import Link from "next/link";
-
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getListsForWorkspace } from "@/features/lists/server/queries";
 import { requireWorkspaceAccess } from "@/features/workspaces/server/access";
 import { routes } from "@/shared/lib/routes";
+import { NavLink } from "@/shared/ui/nav-link";
 
 export default async function ListsPage({
   params,
@@ -26,9 +25,9 @@ export default async function ListsPage({
           <p className="text-sm text-muted-foreground">Private and shared lists inside this workspace.</p>
         </div>
 
-        <Link className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" href={routes.newList(workspace.slug)}>
+        <NavLink className="inline-flex h-10 items-center justify-center rounded-full bg-primary px-5 text-sm font-medium text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:shadow-md" href={routes.newList(workspace.slug)}>
           New list
-        </Link>
+        </NavLink>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -41,7 +40,7 @@ export default async function ListsPage({
           ][index % 4];
 
           return (
-            <Link key={list.id} href={routes.list(workspace.slug, list.id)} className="block">
+            <NavLink key={list.id} href={routes.list(workspace.slug, list.id)} className="block">
               <Card className={`border-border/60 bg-gradient-to-br ${palette} shadow-sm transition duration-200 hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-md`}>
                 <CardHeader>
                   <div className="flex items-center justify-between gap-3">
@@ -60,7 +59,7 @@ export default async function ListsPage({
                   </span>
                 </CardContent>
               </Card>
-            </Link>
+            </NavLink>
           );
         })}
       </div>
