@@ -12,6 +12,7 @@ export const listQueryStateSchema = z.object({
   sortField: z.string().optional(),
   sortDir: z.enum(["asc", "desc"]).optional(),
   filters: z.array(listFilterSchema).default([]),
+  itemView: z.enum(["side", "center", "full"]).default("side"),
 });
 
 export type ListQueryState = z.infer<typeof listQueryStateSchema>;
@@ -20,6 +21,7 @@ export const parseListQueryState = (searchParams: Record<string, string | string
   const sortField = typeof searchParams.sortField === "string" ? searchParams.sortField : undefined;
   const sortDir = typeof searchParams.sortDir === "string" ? searchParams.sortDir : undefined;
   const filtersRaw = typeof searchParams.filters === "string" ? searchParams.filters : undefined;
+  const itemView = typeof searchParams.itemView === "string" ? searchParams.itemView : undefined;
 
   let filters: ListQueryState["filters"] = [];
   if (filtersRaw) {
@@ -34,6 +36,7 @@ export const parseListQueryState = (searchParams: Record<string, string | string
     sortField,
     sortDir,
     filters,
+    itemView,
   });
 };
 
@@ -50,6 +53,10 @@ export const serializeListQueryState = (state: ListQueryState) => {
 
   if (state.filters.length > 0) {
     params.set("filters", JSON.stringify(state.filters));
+  }
+
+  if (state.itemView !== "side") {
+    params.set("itemView", state.itemView);
   }
 
   return params.toString();

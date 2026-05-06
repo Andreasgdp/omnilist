@@ -4,9 +4,10 @@ import { useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { ArrowUpDown, Filter } from "lucide-react";
+
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import type { ListQueryState } from "@/features/lists/lib/query-state";
 import type { FieldDefinition } from "@/shared/lib/list-schema";
 
@@ -34,10 +35,13 @@ export function ListFilters({ fields, queryState, relationOptions }: Props) {
       : undefined;
 
   return (
-    <div className="rounded-2xl border border-border/60 bg-card/90 p-5 shadow-sm">
-      <div className="grid gap-4 lg:grid-cols-[1fr_160px_1fr_auto]">
-        <div className="space-y-2">
-          <Label>Sort field</Label>
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      <div className="flex items-center gap-2 rounded-full border border-border/70 bg-background/75 px-2 py-1 shadow-sm">
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+          <ArrowUpDown className="size-3.5" />
+          Sort
+        </span>
+        <div className="w-36 sm:w-44">
           <Select
             value={sortField || undefined}
             onValueChange={(value) => {
@@ -46,7 +50,7 @@ export function ListFilters({ fields, queryState, relationOptions }: Props) {
               }
             }}
           >
-            <SelectTrigger className="transition-all duration-200 hover:border-primary/60 hover:bg-primary/4">
+            <SelectTrigger className="h-8 rounded-full border-0 bg-transparent px-3 shadow-none transition-all duration-200 hover:bg-primary/4">
               <span className="truncate text-left text-sm">{selectedSortField?.label ?? "Newest first"}</span>
             </SelectTrigger>
             <SelectContent>
@@ -59,11 +63,10 @@ export function ListFilters({ fields, queryState, relationOptions }: Props) {
           </Select>
         </div>
 
-        <div className="space-y-2">
-          <Label>Direction</Label>
+        <div className="w-28">
           <Select value={sortDir} onValueChange={(value) => setSortDir(value as "asc" | "desc")}>
-            <SelectTrigger className="transition-all duration-200 hover:border-primary/60 hover:bg-primary/4">
-              <SelectValue />
+            <SelectTrigger className="h-8 rounded-full border-0 bg-transparent px-3 shadow-none transition-all duration-200 hover:bg-primary/4">
+              <span className="truncate text-left text-sm">{sortDir === "desc" ? "Descending" : "Ascending"}</span>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="asc">Ascending</SelectItem>
@@ -71,10 +74,14 @@ export function ListFilters({ fields, queryState, relationOptions }: Props) {
             </SelectContent>
           </Select>
         </div>
+      </div>
 
-        <div className="space-y-2">
-          <Label>Contains filter</Label>
-          <div className="flex flex-col gap-2 sm:flex-row">
+      <div className="flex flex-wrap items-center gap-2 rounded-full border border-border/70 bg-background/75 px-2 py-1 shadow-sm">
+        <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
+          <Filter className="size-3.5" />
+          Filter
+        </span>
+        <div className="w-36 sm:w-44">
             <Select
               value={filterField}
               onValueChange={(value) => {
@@ -83,7 +90,7 @@ export function ListFilters({ fields, queryState, relationOptions }: Props) {
                 }
               }}
             >
-              <SelectTrigger className="transition-all duration-200 hover:border-primary/60 hover:bg-primary/4">
+              <SelectTrigger className="h-8 rounded-full border-0 bg-transparent px-3 shadow-none transition-all duration-200 hover:bg-primary/4">
                 <span className="truncate text-left text-sm">{selectedFilterField?.label ?? "Choose a field"}</span>
               </SelectTrigger>
               <SelectContent>
@@ -94,85 +101,89 @@ export function ListFilters({ fields, queryState, relationOptions }: Props) {
                 ))}
               </SelectContent>
             </Select>
+        </div>
 
-            {selectedFilterField?.type === "select" ? (
-              <Select value={filterValue || undefined} onValueChange={(value) => setFilterValue(value ?? "")}>
-                <SelectTrigger className="transition-all duration-200 hover:border-primary/60 hover:bg-primary/4">
+        <div className="min-w-[12rem] flex-1 sm:min-w-[14rem]">
+          {selectedFilterField?.type === "select" ? (
+            <Select value={filterValue || undefined} onValueChange={(value) => setFilterValue(value ?? "")}>
+              <SelectTrigger className="h-8 rounded-full border-0 bg-transparent px-3 shadow-none transition-all duration-200 hover:bg-primary/4">
                   <span className="truncate text-left text-sm">{selectedFilterValueLabel ?? "Choose a value"}</span>
-                </SelectTrigger>
-                <SelectContent>
-                  {(selectedFilterField.options ?? []).map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : selectedFilterField?.type === "relation" ? (
-              <Select value={filterValue || undefined} onValueChange={(value) => setFilterValue(value ?? "")}>
-                <SelectTrigger className="transition-all duration-200 hover:border-primary/60 hover:bg-primary/4">
+              </SelectTrigger>
+              <SelectContent>
+                {(selectedFilterField.options ?? []).map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : selectedFilterField?.type === "relation" ? (
+            <Select value={filterValue || undefined} onValueChange={(value) => setFilterValue(value ?? "")}>
+              <SelectTrigger className="h-8 rounded-full border-0 bg-transparent px-3 shadow-none transition-all duration-200 hover:bg-primary/4">
                   <span className="truncate text-left text-sm">{selectedFilterValueLabel ?? "Choose an item"}</span>
-                </SelectTrigger>
-                <SelectContent>
-                  {(relationOptions?.[selectedFilterField.key] ?? []).map((option) => (
-                    <SelectItem key={option.id} value={option.id}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Input value={filterValue} onChange={(event) => setFilterValue(event.target.value)} placeholder="Search value" className="transition-all duration-200 hover:border-primary/60 focus-visible:scale-[1.01]" />
-            )}
-          </div>
+              </SelectTrigger>
+              <SelectContent>
+                {(relationOptions?.[selectedFilterField.key] ?? []).map((option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input value={filterValue} onChange={(event) => setFilterValue(event.target.value)} placeholder="Search value" className="h-8 rounded-full border-0 bg-transparent px-3 shadow-none transition-all duration-200 hover:bg-primary/4 focus-visible:ring-2" />
+          )}
         </div>
+      </div>
 
-        <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-end">
-          <Button
-            type="button"
-            className="motion-press rounded-full px-5 shadow-sm shadow-primary/10"
-            onClick={() => {
-              const params = new URLSearchParams(searchParams.toString());
+      <div className="flex items-center gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="motion-press rounded-full px-4"
+          onClick={() => {
+            const params = new URLSearchParams(searchParams.toString());
 
-              if (sortField) {
-                params.set("sortField", sortField);
-                params.set("sortDir", sortDir);
-              } else {
-                params.delete("sortField");
-                params.delete("sortDir");
-              }
+            if (sortField) {
+              params.set("sortField", sortField);
+              params.set("sortDir", sortDir);
+            } else {
+              params.delete("sortField");
+              params.delete("sortDir");
+            }
 
-              if (filterField && filterValue) {
-                params.set(
-                  "filters",
-                  JSON.stringify([
-                    {
-                      field: filterField,
-                      op: "contains",
-                      value: filterValue,
-                    },
-                  ]),
-                );
-              } else {
-                params.delete("filters");
-              }
+            if (filterField && filterValue) {
+              params.set(
+                "filters",
+                JSON.stringify([
+                  {
+                    field: filterField,
+                    op: "contains",
+                    value: filterValue,
+                  },
+                ]),
+              );
+            } else {
+              params.delete("filters");
+            }
 
-              router.push(`${pathname}?${params.toString()}`);
-            }}
-          >
-            Apply
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="motion-press rounded-full px-5"
-            onClick={() => {
-              router.push(pathname);
-            }}
-          >
-            Reset
-          </Button>
-        </div>
+            router.push(`${pathname}?${params.toString()}`);
+          }}
+        >
+          Apply
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="motion-press rounded-full px-4 text-muted-foreground"
+          onClick={() => {
+            router.push(pathname);
+          }}
+        >
+          Reset
+        </Button>
       </div>
     </div>
   );

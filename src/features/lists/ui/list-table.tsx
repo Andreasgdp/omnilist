@@ -2,7 +2,7 @@
 
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { ChevronDown, ChevronRight, GripVertical, Plus } from "lucide-react";
+import { ArrowUpRight, ChevronDown, ChevronRight, GripVertical, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ItemSheet } from "@/features/lists/ui/item-sheet";
@@ -10,6 +10,8 @@ import { AddFieldButton, FieldHeaderEditor } from "@/features/lists/ui/table-fie
 import { reorderItemsAction } from "@/features/lists/server/actions";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { FieldDefinition } from "@/shared/lib/list-schema";
+import { routes } from "@/shared/lib/routes";
+import { NavLink } from "@/shared/ui/nav-link";
 
 export function ListTable({
   fields,
@@ -21,6 +23,7 @@ export function ListTable({
   relationOptions,
   availableLists,
   canEditSchema,
+  itemViewMode = "side",
 }: {
   fields: FieldDefinition[];
   items: Array<{ id: string; data: Record<string, unknown> }>;
@@ -31,10 +34,11 @@ export function ListTable({
   relationOptions?: Record<string, Array<{ id: string; label: string }>>;
   availableLists: Array<{ id: string; name: string }>;
   canEditSchema: boolean;
+  itemViewMode?: "side" | "center" | "full";
 }) {
   const itemsKey = useMemo(() => items.map((item) => item.id).join("|"), [items]);
 
-  return <ListTableInner key={itemsKey} {...{ fields, items, relatedById, workspaceId, workspaceSlug, listId, relationOptions, availableLists, canEditSchema }} />;
+  return <ListTableInner key={itemsKey} {...{ fields, items, relatedById, workspaceId, workspaceSlug, listId, relationOptions, availableLists, canEditSchema, itemViewMode }} />;
 }
 
 function ListTableInner({
@@ -47,6 +51,7 @@ function ListTableInner({
   relationOptions,
   availableLists,
   canEditSchema,
+  itemViewMode,
 }: {
   fields: FieldDefinition[];
   items: Array<{ id: string; data: Record<string, unknown> }>;
@@ -57,6 +62,7 @@ function ListTableInner({
   relationOptions?: Record<string, Array<{ id: string; label: string }>>;
   availableLists: Array<{ id: string; name: string }>;
   canEditSchema: boolean;
+  itemViewMode: "side" | "center" | "full";
 }) {
   const titleFieldKey = fields[0]?.key;
   const getSelectLabel = useCallback((field: FieldDefinition, value: unknown) => {
@@ -416,6 +422,22 @@ function ListTableInner({
                       const cellClassName = mobileVisibleFieldKeys.has(field.key) ? "" : "hidden md:table-cell";
 
                       if (field.key === titleFieldKey) {
+                        if (itemViewMode === "full") {
+                          return (
+                            <TableCell key={field.key} className={`${getFieldWidthClass(field)} ${cellClassName} border-b border-border/55 px-2 py-2 first:pl-3 align-middle`}>
+                              <NavLink
+                                href={routes.listItem(workspaceSlug, listId, item.id)}
+                                className="flex min-h-10 w-full items-center justify-between rounded-xl px-3 py-2 text-left font-medium text-foreground transition-all duration-200 hover:bg-primary/7 hover:shadow-sm"
+                              >
+                                <span className="truncate">{value ? String(value) : "Untitled item"}</span>
+                                <span className="ml-3 text-muted-foreground opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100" aria-hidden="true">
+                                  <ArrowUpRight className="size-4" />
+                                </span>
+                              </NavLink>
+                            </TableCell>
+                          );
+                        }
+
                         return (
                           <TableCell key={field.key} className={`${getFieldWidthClass(field)} ${cellClassName} border-b border-border/55 px-2 py-2 first:pl-3 align-middle`}>
                             <ItemSheet
@@ -438,6 +460,7 @@ function ListTableInner({
                               fields={fields}
                               relationOptions={relationOptions}
                               initialValues={item.data}
+                              viewMode={itemViewMode}
                             />
                           </TableCell>
                         );

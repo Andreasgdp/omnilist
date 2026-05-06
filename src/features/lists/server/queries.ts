@@ -237,3 +237,63 @@ export const getListDetail = async ({
     views,
   };
 };
+
+export const getListItemDetail = async ({
+  listId,
+  itemId,
+  userId,
+  workspaceId,
+}: {
+  listId: string;
+  itemId: string;
+  userId: string;
+  workspaceId: string;
+}) => {
+  const workspaceMembership = await db.query.workspaceMembers.findFirst({
+    where: and(
+      eq(workspaceMembers.workspaceId, workspaceId),
+      eq(workspaceMembers.userId, userId),
+    ),
+  });
+
+  if (!workspaceMembership) {
+    return null;
+  }
+
+  const access = await requireListAccess({
+    listId,
+    userId,
+    workspaceId,
+    workspaceRole: workspaceMembership.role,
+  });
+
+  const repairedSchema = repairStoredListFields(access.list.schema);
+  const fields = repairedSchema.fields;
+
+  if (repairedSchema.changed) {
+    await db
+      .update(lists)
+      .set({ schema: fields })
+      .where(and(eq(lists.id, listId), eq(lists.workspaceId, workspaceId)));
+  }
+
+  const item = await db.query.listItems.findFirst({
+    where: and(eq(listItems.id, itemId), eq(listItems.listId, listId)),
+  });
+
+  if (!item) {
+    return null;
+  }
+
+  const relationOptions = await buildRelationOptions({
+    fields,
+    workspaceId,
+  });
+
+  return {
+    ...access,
+    fields,
+    item,
+    relationOptions,
+  };
+};

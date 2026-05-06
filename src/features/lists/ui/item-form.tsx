@@ -38,6 +38,7 @@ type Props = {
   fields: FieldDefinition[];
   relationOptions?: Record<string, Array<{ id: string; label: string }>>;
   initialValues?: Record<string, unknown>;
+  showHeader?: boolean;
 };
 
 export function ItemForm({
@@ -50,8 +51,12 @@ export function ItemForm({
   fields,
   relationOptions,
   initialValues,
+  showHeader = true,
 }: Props) {
   const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {});
+  const titleField = fields.find((field) => field.key === "title") ?? fields[0];
+  const descriptionField = fields.find((field) => field.key === "description");
+  const orderedFields = [titleField, descriptionField, ...fields.filter((field) => field.key !== titleField?.key && field.key !== descriptionField?.key)].filter((field): field is FieldDefinition => Boolean(field));
 
   const clearValue = (fieldKey: string) => {
     setValues((current) => {
@@ -73,12 +78,14 @@ export function ItemForm({
       {typeof insertAt === "number" ? <input type="hidden" name="insertAt" value={String(insertAt)} /> : null}
       <input type="hidden" name="payload" value={payload} readOnly />
 
-      <div>
-        <h3 className="text-lg font-semibold">{mode === "create" ? "Add item" : "Edit item"}</h3>
-        <p className="text-sm text-muted-foreground">Fill in the details below. Keep it light now and add more later.</p>
-      </div>
+      {showHeader ? (
+        <div>
+          <h3 className="text-lg font-semibold">{mode === "create" ? "Add item" : "Edit item"}</h3>
+          <p className="text-sm text-muted-foreground">Fill in the details below. Keep it light now and add more later.</p>
+        </div>
+      ) : null}
 
-      {fields.map((field) => {
+      {orderedFields.map((field) => {
         const fieldLabel = (
           <span className="inline-flex items-center gap-2">
             <FieldTypeIcon type={field.type} className="size-4 text-muted-foreground" />
@@ -89,6 +96,11 @@ export function ItemForm({
           typeof values[field.key] === "string"
             ? field.options?.find((option) => option.value === values[field.key])?.label
             : undefined;
+        const isTitleField = field.key === titleField?.key;
+        const isDescriptionField = field.key === descriptionField?.key;
+        const surfaceClassName = isTitleField || isDescriptionField
+          ? "space-y-2"
+          : "rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm shadow-primary/5";
 
         if (field.type === "boolean") {
           return (
@@ -111,7 +123,7 @@ export function ItemForm({
 
         if (field.type === "select") {
           return (
-            <div key={field.key} className="space-y-2">
+            <div key={field.key} className={surfaceClassName}>
               <Label>{fieldLabel}</Label>
               <Select
                 value={typeof values[field.key] === "string" ? (values[field.key] as string) : undefined}
@@ -138,12 +150,13 @@ export function ItemForm({
 
         if (field.type === "text") {
           return (
-            <div key={field.key} className="space-y-2">
+            <div key={field.key} className={surfaceClassName}>
               <Label>{fieldLabel}</Label>
               <Textarea
                 required={field.required}
                 placeholder={getFieldPlaceholder(field)}
                 value={typeof values[field.key] === "string" ? (values[field.key] as string) : ""}
+                className={isTitleField ? "min-h-[5.5rem] border-0 bg-transparent px-0 text-3xl font-semibold leading-tight shadow-none focus-visible:ring-0 sm:text-4xl" : isDescriptionField ? "min-h-[4.5rem] border-border/60 bg-muted/15" : undefined}
                 onChange={(event) =>
                   setValues((current) => ({ ...current, [field.key]: event.target.value }))
                 }
@@ -154,7 +167,7 @@ export function ItemForm({
 
         if (field.type === "document") {
           return (
-            <div key={field.key} className="space-y-2">
+            <div key={field.key} className={surfaceClassName}>
               <Label>{fieldLabel}</Label>
               <p className="text-xs text-muted-foreground">Add richer notes, ideas, or steps.</p>
               <DocumentEditor
@@ -175,7 +188,7 @@ export function ItemForm({
             : null;
 
           return (
-            <div key={field.key} className="space-y-2">
+            <div key={field.key} className={surfaceClassName}>
               <Label>{fieldLabel}</Label>
                 <Select
                   value={field.multiple ? undefined : selectedRelationId ?? undefined}
@@ -241,13 +254,14 @@ export function ItemForm({
         }
 
         return (
-          <div key={field.key} className="space-y-2">
+          <div key={field.key} className={surfaceClassName}>
             <Label>{fieldLabel}</Label>
             <Input
               type={field.type === "number" ? "number" : field.type === "date" ? "date" : field.type === "url" ? "url" : "text"}
               required={field.required}
               placeholder={getFieldPlaceholder(field)}
               value={typeof values[field.key] === "string" || typeof values[field.key] === "number" ? String(values[field.key]) : ""}
+              className={isTitleField ? "h-14 border-0 bg-transparent px-0 text-3xl font-semibold shadow-none focus-visible:ring-0 sm:text-4xl" : undefined}
               onChange={(event) =>
                 setValues((current) => ({
                   ...current,

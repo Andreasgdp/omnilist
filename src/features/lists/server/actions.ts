@@ -496,6 +496,7 @@ export const updateItemAction = async (formData: FormData) => {
     .where(and(eq(listItems.id, input.itemId), eq(listItems.listId, input.listId)));
 
   revalidatePath(routes.list(input.workspaceSlug, input.listId));
+  revalidatePath(routes.listItem(input.workspaceSlug, input.listId, input.itemId));
 };
 
 const deleteItemInputSchema = z.object({
@@ -503,6 +504,7 @@ const deleteItemInputSchema = z.object({
   listId: z.string().uuid(),
   workspaceId: z.string().uuid(),
   workspaceSlug: z.string().min(1),
+  returnToList: z.enum(["true", "false"]).optional(),
 });
 
 export const deleteItemAction = async (formData: FormData) => {
@@ -534,6 +536,10 @@ export const deleteItemAction = async (formData: FormData) => {
   await db.delete(listItems).where(and(eq(listItems.id, input.itemId), eq(listItems.listId, input.listId)));
 
   revalidatePath(routes.list(input.workspaceSlug, input.listId));
+
+  if (input.returnToList === "true") {
+    redirect(routes.list(input.workspaceSlug, input.listId));
+  }
 };
 
 const reorderItemsInputSchema = z.object({
@@ -653,6 +659,7 @@ const saveViewSchema = z.object({
   sortField: z.string().optional(),
   sortDir: z.enum(["asc", "desc"]).optional(),
   filters: z.string().optional(),
+  itemView: z.enum(["side", "center", "full"]).optional(),
 });
 
 export const saveListViewAction = async (formData: FormData) => {
@@ -681,6 +688,7 @@ export const saveListViewAction = async (formData: FormData) => {
     sortField: input.sortField,
     sortDir: input.sortDir,
     filters: input.filters,
+    itemView: input.itemView,
   });
 
   const existing = await db.query.listViews.findFirst({

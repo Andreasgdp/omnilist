@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Circle, Star, Trash2 } from "lucide-react";
 
 import { describeQueryState } from "@/features/lists/lib/query-state-display";
@@ -13,6 +14,7 @@ export function ViewChipList({
   workspaceSlug,
   fields,
   relationOptions,
+  itemViewMode = "side",
 }: {
   views: Array<{ id: string; name: string; state: ListQueryState; isFavorite: string; isDefault: string }>;
   basePath: string;
@@ -20,34 +22,38 @@ export function ViewChipList({
   workspaceSlug: string;
   fields: FieldDefinition[];
   relationOptions?: Record<string, Array<{ id: string; label: string }>>;
+  itemViewMode?: "side" | "center" | "full";
 }) {
-  if (views.length === 0) {
-    return null;
-  }
-
   return (
-    <div className="rounded-2xl border border-border/60 bg-card/90 p-4 shadow-sm">
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-semibold">Saved views</h3>
-          <p className="text-sm text-muted-foreground">Jump back into the filters that matter most.</p>
-        </div>
-      </div>
+    <div className="flex min-w-0 items-center gap-2 overflow-x-auto pb-1">
+      <Link
+        href={basePath}
+        className="inline-flex shrink-0 items-center rounded-full border border-border/70 bg-muted/50 px-3 py-1.5 text-sm font-medium text-foreground shadow-sm"
+      >
+        Table
+      </Link>
 
-      <div className="flex flex-wrap gap-2">
       {views.map((view) => (
-        <div key={view.id} className="motion-pill flex items-center gap-2 rounded-2xl border border-border/70 bg-card pr-2 shadow-sm shadow-primary/5">
+        (() => {
+          const params = new URLSearchParams(serializeListQueryState(view.state));
+          if (itemViewMode !== "side") {
+            params.set("itemView", itemViewMode);
+          }
+          const href = `${basePath}${params.toString() ? `?${params.toString()}` : ""}`;
+
+          return (
+        <div key={view.id} className="motion-pill flex shrink-0 items-center gap-2 rounded-full border border-border/70 bg-background/70 pr-2 shadow-sm shadow-primary/5">
           <NavLink
-            href={`${basePath}?${serializeListQueryState(view.state)}`}
-            className="inline-flex min-w-0 rounded-2xl px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            href={href}
+            className="inline-flex min-w-0 rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
           >
             <span className="flex min-w-0 flex-col items-start gap-1">
               <span className="flex items-center gap-2">
-              {view.isFavorite === "true" ? <Star className="size-3.5 fill-current text-amber-500" aria-hidden="true" /> : null}
-              {view.isDefault === "true" ? <Circle className="size-2.5 fill-current text-primary" aria-hidden="true" /> : null}
-              {view.name}
+                {view.isFavorite === "true" ? <Star className="size-3.5 fill-current text-amber-500" aria-hidden="true" /> : null}
+                {view.isDefault === "true" ? <Circle className="size-2.5 fill-current text-primary" aria-hidden="true" /> : null}
+                {view.name}
               </span>
-              <span className="max-w-72 truncate text-xs text-muted-foreground/80">
+              <span className="max-w-72 truncate text-[11px] text-muted-foreground/80">
                 {describeQueryState({
                   state: view.state,
                   fields,
@@ -84,8 +90,9 @@ export function ViewChipList({
             </button>
           </form>
         </div>
+          );
+        })()
       ))}
-      </div>
     </div>
   );
 }
