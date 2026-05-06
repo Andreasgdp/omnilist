@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/u
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { createItemAction, updateItemAction } from "@/features/lists/server/actions";
-import type { FieldDefinition } from "@/shared/lib/list-schema";
+import { itemPageContentKey, type FieldDefinition, type DocumentBlock } from "@/shared/lib/list-schema";
 import { FieldTypeIcon } from "@/shared/ui/field-type-icon";
 
 const getFieldPlaceholder = (field: FieldDefinition) => {
@@ -68,6 +68,7 @@ export function ItemForm({
 
   const payload = useMemo(() => JSON.stringify(values), [values]);
   const action = mode === "create" ? createItemAction : updateItemAction;
+  const pageContentValue = Array.isArray(values[itemPageContentKey]) ? (values[itemPageContentKey] as DocumentBlock[]) : undefined;
 
   return (
     <form action={action} className="space-y-4">
@@ -122,18 +123,28 @@ export function ItemForm({
         }
 
         if (field.type === "select") {
+          const selectedValues = Array.isArray(values[field.key]) ? (values[field.key] as string[]) : [];
           return (
             <div key={field.key} className={surfaceClassName}>
               <Label>{fieldLabel}</Label>
               <Select
-                value={typeof values[field.key] === "string" ? (values[field.key] as string) : undefined}
+                value={!field.multiple && typeof values[field.key] === "string" ? (values[field.key] as string) : undefined}
                 onValueChange={(value) =>
-                  setValues((current) => ({ ...current, [field.key]: value }))
+                  setValues((current) => ({
+                    ...current,
+                    [field.key]: field.multiple
+                      ? Array.from(new Set([...(Array.isArray(current[field.key]) ? (current[field.key] as string[]) : []), value]))
+                      : value,
+                  }))
                 }
               >
                 <SelectTrigger className="w-full">
                   <span className="truncate text-left text-sm">
-                    {selectedOptionLabel ?? `Choose ${field.label.toLowerCase()}`}
+                    {field.multiple
+                      ? selectedValues.length > 0
+                        ? `${selectedValues.length} selected`
+                        : `Choose ${field.label.toLowerCase()}`
+                      : selectedOptionLabel ?? `Choose ${field.label.toLowerCase()}`}
                   </span>
                 </SelectTrigger>
                 <SelectContent>
@@ -144,6 +155,31 @@ export function ItemForm({
                   ))}
                 </SelectContent>
               </Select>
+
+              {field.multiple && selectedValues.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {selectedValues.map((selectedValue) => {
+                    const selectedOption = field.options?.find((option) => option.value === selectedValue);
+                    return (
+                      <button
+                        key={selectedValue}
+                        type="button"
+                        className="rounded-full border border-border/70 px-3 py-1 text-sm text-muted-foreground transition hover:bg-muted"
+                        onClick={() =>
+                          setValues((current) => ({
+                            ...current,
+                            [field.key]: ((Array.isArray(current[field.key]) ? current[field.key] : []) as string[]).filter(
+                              (value) => value !== selectedValue,
+                            ),
+                          }))
+                        }
+                      >
+                        {selectedOption?.label ?? selectedValue} ×
+                      </button>
+                    );
+                  })}
+                </div>
+              ) : null}
             </div>
           );
         }
@@ -272,6 +308,25 @@ export function ItemForm({
           </div>
         );
       })}
+
+      <div className="space-y-3 pt-3">
+        <div className="border-t border-border/55 pt-5">
+          <div className="space-y-1">
+            <Label className="text-sm font-medium">Page content</Label>
+            <p className="text-sm text-muted-foreground">Write freely here with richer notes, structure, media, tables, and commands.</p>
+          </div>
+        </div>
+        <DocumentEditor
+          value={pageContentValue}
+          variant="page"
+          onChange={(blocks) => {
+            setValues((current) => ({
+              ...current,
+              [itemPageContentKey]: blocks,
+            }));
+          }}
+        />
+      </div>
 
       <Button type="submit" className="rounded-full px-5">
         {mode === "create" ? "Add item" : "Save changes"}

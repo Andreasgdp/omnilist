@@ -169,6 +169,177 @@
   .motion-stagger-3 {
     animation-delay: 120ms;
   }
+
+  .omnilist-blocknote {
+    direction: ltr;
+    unicode-bidi: isolate;
+  }
+
+  .omnilist-blocknote .bn-root {
+    direction: ltr;
+    unicode-bidi: isolate;
+    --bn-font-family: var(--font-sans);
+    --bn-border-radius: 16px;
+    --bn-colors-editor-text: var(--foreground);
+    --bn-colors-editor-background: transparent;
+    --bn-colors-menu-text: var(--foreground);
+    --bn-colors-menu-background: color-mix(in oklab, var(--card) 98%, transparent);
+    --bn-colors-tooltip-text: var(--foreground);
+    --bn-colors-tooltip-background: color-mix(in oklab, var(--card) 98%, transparent);
+    --bn-colors-hovered-text: var(--foreground);
+    --bn-colors-hovered-background: color-mix(in oklab, var(--muted) 86%, transparent);
+    --bn-colors-selected-text: var(--primary-foreground);
+    --bn-colors-selected-background: var(--primary);
+    --bn-colors-disabled-text: color-mix(in oklab, var(--muted-foreground) 72%, transparent);
+    --bn-colors-disabled-background: color-mix(in oklab, var(--muted) 72%, transparent);
+    --bn-colors-shadow: color-mix(in oklab, var(--foreground) 10%, transparent);
+    --bn-colors-border: color-mix(in oklab, var(--border) 90%, transparent);
+    --bn-colors-side-menu: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+  }
+
+  .omnilist-blocknote .bn-editor {
+    background: transparent;
+    padding: 0.875rem 1rem 1.25rem;
+    min-height: 10rem;
+  }
+
+  .omnilist-blocknote-compact .bn-editor {
+    min-height: 5.5rem;
+  }
+
+  .omnilist-blocknote-page {
+    border-top: 1px solid color-mix(in oklab, var(--border) 70%, transparent);
+    padding-top: 1rem;
+  }
+
+  .omnilist-blocknote-page .bn-editor {
+    min-height: 18rem;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .omnilist-blocknote .bn-editor,
+  .omnilist-blocknote .bn-inline-content,
+  .omnilist-blocknote .ProseMirror,
+  .omnilist-blocknote [contenteditable="true"] {
+    direction: ltr;
+    text-align: left;
+    unicode-bidi: plaintext;
+  }
+
+  .omnilist-blocknote .bn-toolbar,
+  .omnilist-blocknote .bn-side-menu,
+  .omnilist-blocknote [data-floating-ui-portal] {
+    direction: ltr;
+  }
+
+  .omnilist-blocknote .bn-root {
+    background: transparent;
+  }
+
+  .omnilist-blocknote .bn-toolbar,
+  .omnilist-blocknote .bn-popover,
+  .omnilist-blocknote [data-floating-ui-portal] [role="dialog"],
+  .omnilist-blocknote [data-floating-ui-portal] [role="menu"] {
+    border-radius: 16px;
+  }
+
+  .omnilist-blocknote .bn-menu-dropdown,
+  .omnilist-blocknote .bn-suggestion-menu,
+  .omnilist-blocknote .bn-grid-suggestion-menu,
+  .omnilist-blocknote .bn-panel,
+  .omnilist-blocknote .bn-popover-content {
+    background: color-mix(in oklab, var(--card) 98%, transparent);
+    border: 1px solid color-mix(in oklab, var(--border) 68%, transparent);
+    box-shadow: 0 20px 48px -28px color-mix(in oklab, var(--foreground) 24%, transparent);
+    color: var(--foreground);
+    backdrop-filter: blur(18px);
+  }
+
+  .omnilist-blocknote .bn-menu-item,
+  .omnilist-blocknote .bn-suggestion-menu-item,
+  .omnilist-blocknote .bn-grid-suggestion-menu-item,
+  .omnilist-blocknote .bn-button {
+    border-radius: 12px;
+  }
+
+  .omnilist-blocknote .bn-menu-item:hover,
+  .omnilist-blocknote .bn-suggestion-menu-item:hover,
+  .omnilist-blocknote .bn-grid-suggestion-menu-item:hover,
+  .omnilist-blocknote .bn-button:hover {
+    background: color-mix(in oklab, var(--muted) 82%, transparent);
+  }
+
+  .omnilist-blocknote .bn-suggestion-menu-item[aria-selected="true"],
+  .omnilist-blocknote .bn-grid-suggestion-menu-item[aria-selected="true"] {
+    background: color-mix(in oklab, var(--primary) 16%, transparent);
+    color: var(--foreground);
+  }
+
+  .omnilist-blocknote .bn-toolbar {
+    background: color-mix(in oklab, var(--card) 96%, transparent);
+    border: 1px solid color-mix(in oklab, var(--border) 72%, transparent);
+    box-shadow: 0 16px 38px -24px color-mix(in oklab, var(--foreground) 20%, transparent);
+  }
+
+  .omnilist-blocknote .bn-side-menu {
+    color: var(--muted-foreground);
+  }
+
+  .omnilist-blocknote .bn-editor [data-content-type="heading"][data-level="1"] {
+    font-size: clamp(2rem, 3vw, 2.8rem);
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+    font-weight: 700;
+  }
+
+  .omnilist-blocknote .bn-editor [data-content-type="heading"][data-level="2"] {
+    font-size: 1.55rem;
+    line-height: 1.18;
+    letter-spacing: -0.02em;
+    font-weight: 650;
+  }
+
+  .omnilist-blocknote .bn-editor [data-content-type="heading"][data-level="3"] {
+    font-size: 1.2rem;
+    line-height: 1.24;
+    font-weight: 650;
+  }
+
+  .omnilist-blocknote .bn-editor .bn-inline-content[data-content-type="paragraph"] {
+    font-size: 1.02rem;
+    line-height: 1.75;
+  }
+
+  .omnilist-blocknote .bn-editor .bn-block-content::before {
+    color: color-mix(in oklab, var(--muted-foreground) 55%, transparent);
+  }
+
+  .dark .omnilist-blocknote .bn-root {
+    --bn-colors-editor-background: transparent;
+    --bn-colors-menu-background: color-mix(in oklab, var(--card) 98%, transparent);
+    --bn-colors-tooltip-background: color-mix(in oklab, var(--card) 94%, transparent);
+    --bn-colors-hovered-background: color-mix(in oklab, var(--muted) 84%, transparent);
+    --bn-colors-disabled-background: color-mix(in oklab, var(--muted) 68%, transparent);
+    --bn-colors-border: color-mix(in oklab, var(--border) 65%, transparent);
+    --bn-colors-shadow: color-mix(in oklab, black 28%, transparent);
+  }
+
+  .dark .omnilist-blocknote .bn-toolbar {
+    background: color-mix(in oklab, var(--card) 98%, transparent);
+    border-color: color-mix(in oklab, var(--border) 65%, transparent);
+    box-shadow: 0 18px 40px -24px color-mix(in oklab, black 36%, transparent);
+  }
+
+  .dark .omnilist-blocknote .bn-menu-dropdown,
+  .dark .omnilist-blocknote .bn-suggestion-menu,
+  .dark .omnilist-blocknote .bn-grid-suggestion-menu,
+  .dark .omnilist-blocknote .bn-panel,
+  .dark .omnilist-blocknote .bn-popover-content {
+    background: color-mix(in oklab, var(--card) 98%, transparent);
+    border-color: color-mix(in oklab, var(--border) 62%, transparent);
+    box-shadow: 0 22px 52px -28px color-mix(in oklab, black 42%, transparent);
+  }
 }
 
 @keyframes omnilist-fade-up {

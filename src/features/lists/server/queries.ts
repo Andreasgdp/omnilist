@@ -4,9 +4,13 @@ import { db } from "@/db/client";
 import { listItems, listMembers, lists, listViews, workspaceMembers } from "@/db/schema";
 import { parseListQueryState } from "@/features/lists/lib/query-state";
 import { requireListAccess } from "@/features/lists/server/access";
-import { buildItemSchema, repairStoredListFields, type ListSchemaDefinition } from "@/shared/lib/list-schema";
+import { buildItemSchema, getDocumentPlainText, repairStoredListFields, type ListSchemaDefinition } from "@/shared/lib/list-schema";
 
 const compareValues = (left: unknown, right: unknown) => {
+  if (Array.isArray(left) || Array.isArray(right)) {
+    return getDocumentPlainText(left).localeCompare(getDocumentPlainText(right));
+  }
+
   if (typeof left === "number" && typeof right === "number") {
     return left - right;
   }
@@ -26,7 +30,11 @@ const applyQueryState = ({
   for (const filter of queryState.filters) {
     filtered = filtered.filter((item) => {
       const value = item.data[filter.field];
-      const normalized = typeof value === "string" || typeof value === "number" ? String(value) : "";
+      const normalized = Array.isArray(value)
+        ? getDocumentPlainText(value)
+        : typeof value === "string" || typeof value === "number"
+          ? String(value)
+          : "";
 
       switch (filter.op) {
         case "contains":

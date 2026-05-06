@@ -1,3 +1,5 @@
+import { notFound } from "next/navigation";
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { updateListAction } from "@/features/lists/server/actions";
 import { getListsForWorkspace } from "@/features/lists/server/queries";
@@ -19,7 +21,7 @@ export default async function ListSettingsPage({
   });
 
   if (!detail) {
-    return null;
+    notFound();
   }
 
   const availableLists = await getListsForWorkspace({

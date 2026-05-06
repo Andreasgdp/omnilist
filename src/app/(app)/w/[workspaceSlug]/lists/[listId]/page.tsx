@@ -1,4 +1,5 @@
 import { Plus } from "lucide-react";
+import { notFound } from "next/navigation";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,7 +33,7 @@ export default async function ListPage({
   });
 
   if (!detail) {
-    return null;
+    notFound();
   }
 
   const availableLists = await getListsForWorkspace({

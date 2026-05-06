@@ -12,6 +12,8 @@ import { deleteItemAction } from "@/features/lists/server/actions";
 import { ItemForm } from "@/features/lists/ui/item-form";
 import type { FieldDefinition } from "@/shared/lib/list-schema";
 import { routes } from "@/shared/lib/routes";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export function ItemSheet({
   trigger,
@@ -63,10 +65,13 @@ export function ItemSheet({
             {mode === "edit" && itemId ? (
               <div className="flex items-center gap-2">
                 {itemHref ? (
-                  <Button variant="outline" size="sm" className="rounded-full px-3" render={<Link href={itemHref} />}>
+                  <Link
+                    href={itemHref}
+                    className={cn(buttonVariants({ variant: "outline", size: "sm" }), "rounded-full px-3")}
+                  >
                     <ArrowUpRight className="size-4" />
                     Full page
-                  </Button>
+                  </Link>
                 ) : null}
 
                 <DropdownMenu>

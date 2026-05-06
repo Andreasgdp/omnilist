@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import { notFound } from "next/navigation";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { db } from "@/db/client";
@@ -21,7 +22,7 @@ export default async function ShareListPage({
   });
 
   if (!detail) {
-    return null;
+    notFound();
   }
 
   const members = await db.query.workspaceMembers.findMany({

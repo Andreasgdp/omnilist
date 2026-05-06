@@ -1,4 +1,5 @@
 import { ArrowLeft } from "lucide-react";
+import { notFound } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { deleteItemAction } from "@/features/lists/server/actions";
@@ -23,7 +24,7 @@ export default async function ListItemPage({
   });
 
   if (!detail) {
-    return null;
+    notFound();
   }
 
   const title = typeof detail.item.data.title === "string" ? detail.item.data.title : "Untitled item";
@@ -47,7 +48,7 @@ export default async function ListItemPage({
           <p className="text-sm text-muted-foreground">Edit this item as a full page when you want more room than the peek views.</p>
         </div>
 
-        <div className="rounded-[2rem] border border-border/60 bg-card/75 p-6 shadow-sm shadow-primary/5 backdrop-blur-sm">
+        <div className="rounded-[2rem] border border-border/60 bg-card/75 p-6 shadow-sm shadow-primary/5 backdrop-blur-sm sm:p-8">
           <ItemForm
             mode="edit"
             workspaceId={workspace.id}

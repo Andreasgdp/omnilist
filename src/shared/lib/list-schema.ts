@@ -64,6 +64,8 @@ export const fieldTypeIconNames: Record<FieldType, string> = {
   relation: "waypoints",
 };
 
+export const itemPageContentKey = "__omnilist_content";
+
 export const documentBlockSchema = z.object({
   id: z.string(),
   type: z.string(),
@@ -71,6 +73,57 @@ export const documentBlockSchema = z.object({
   content: z.array(z.unknown()).optional(),
   children: z.array(z.unknown()).optional(),
 });
+
+export type DocumentBlock = z.infer<typeof documentBlockSchema>;
+
+const extractTextFromNode = (node: unknown): string => {
+  if (typeof node === "string") {
+    return node;
+  }
+
+  if (Array.isArray(node)) {
+    return node.map(extractTextFromNode).join("");
+  }
+
+  if (node && typeof node === "object") {
+    const record = node as Record<string, unknown>;
+
+    if (typeof record.text === "string") {
+      return record.text;
+    }
+
+    if (record.content) {
+      return extractTextFromNode(record.content);
+    }
+  }
+
+  return "";
+};
+
+export const getDocumentPlainText = (value: unknown): string => {
+  if (typeof value === "string") {
+    return value;
+  }
+
+  if (!Array.isArray(value)) {
+    return "";
+  }
+
+  return value
+    .map((block) => {
+      if (!block || typeof block !== "object") {
+        return "";
+      }
+
+      const record = block as Record<string, unknown>;
+      const contentText = extractTextFromNode(record.content);
+      const childrenText = extractTextFromNode(record.children);
+      return [contentText, childrenText].filter(Boolean).join(" ");
+    })
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+};
 
 export const relationFieldSchema = z.object({
   targetListId: z.string().uuid(),
@@ -141,6 +194,13 @@ export const listSchemaDefinitionSchema = z.array(fieldDefinitionSchema).superRe
   const labels = new Set<string>();
 
   for (const field of fields) {
+    if (field.key === itemPageContentKey) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `${field.key} is reserved for item page content`,
+      });
+    }
+
     if (keys.has(field.key)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -229,6 +289,8 @@ export const buildItemSchema = (fields: ListSchemaDefinition) => {
       return [field.key, field.required ? schema : schema.optional()];
     }),
   );
+
+  shape[itemPageContentKey] = z.array(documentBlockSchema).optional();
 
   return z.object(shape);
 };
