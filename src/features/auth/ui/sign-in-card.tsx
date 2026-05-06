@@ -21,6 +21,28 @@ export function SignInCard({
   const [isPending, setIsPending] = useState(false);
   const canSendMagicLink = !isPending && email.trim().length > 0;
 
+  const requestMagicLink = async () => {
+    if (!canSendMagicLink) {
+      return;
+    }
+
+    setIsPending(true);
+    setMessage(null);
+
+    const result = await authClient.signIn.magicLink({
+      email,
+      callbackURL: "/",
+    });
+
+    setIsPending(false);
+    if (result.error) {
+      setMessage(result.error.message ?? "Unable to send magic link");
+      return;
+    }
+
+    setMessage("If this email can sign in, a magic link has been sent.");
+  };
+
   return (
     <Card className="w-full max-w-md border border-border/50 bg-card/90 shadow-2xl shadow-primary/10 backdrop-blur">
       <CardHeader>
@@ -60,45 +82,33 @@ export function SignInCard({
           </Button>
         ) : null}
 
-        <div className="space-y-2">
-          <Label htmlFor="email">Magic link email</Label>
-          <Input
-            id="email"
-            type="email"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-        </div>
-
-        <Button
-          variant="outline"
-          className="w-full aria-disabled:pointer-events-none aria-disabled:opacity-50"
-          aria-disabled={!canSendMagicLink}
-          onClick={async () => {
-            if (!canSendMagicLink) {
-              return;
-            }
-
-            setIsPending(true);
-            setMessage(null);
-
-            const result = await authClient.signIn.magicLink({
-              email,
-              callbackURL: "/",
-            });
-
-            setIsPending(false);
-            if (result.error) {
-              setMessage(result.error.message ?? "Unable to send magic link");
-              return;
-            }
-
-            setMessage("Magic link sent. Check your inbox.");
+        <form
+          className="space-y-4"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            await requestMagicLink();
           }}
         >
-          Email me a magic link
-        </Button>
+          <div className="space-y-2">
+            <Label htmlFor="email">Magic link email</Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </div>
+
+          <Button
+            type="submit"
+            variant="outline"
+            className="w-full aria-disabled:pointer-events-none aria-disabled:opacity-50"
+            aria-disabled={!canSendMagicLink}
+          >
+            Email me a magic link
+          </Button>
+        </form>
 
         {!hasMagicLinkEmail ? (
           <p className="text-sm text-muted-foreground">
