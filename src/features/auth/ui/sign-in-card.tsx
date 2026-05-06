@@ -63,7 +63,7 @@ export function SignInCard({
       <CardContent className="space-y-4">
         {hasGoogleAuth ? (
           <Button
-            className="w-full disabled:pointer-events-none disabled:opacity-50"
+            className="motion-press w-full disabled:pointer-events-none disabled:opacity-50"
             aria-disabled={isPending}
             onClick={async () => {
               if (isPending) {
@@ -103,7 +103,7 @@ export function SignInCard({
           <Button
             type="submit"
             variant="outline"
-            className="w-full aria-disabled:pointer-events-none aria-disabled:opacity-50"
+            className="motion-press w-full aria-disabled:pointer-events-none aria-disabled:opacity-50"
             aria-disabled={!canSendMagicLink}
           >
             Email me a magic link

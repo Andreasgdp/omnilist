@@ -1,6 +1,8 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from "react";
+import { createContext, startTransition, useContext, useEffect, useMemo, useSyncExternalStore } from "react";
+
+import { setThemePreferenceAction } from "@/features/auth/server/theme-actions";
 
 type Theme = "light" | "dark";
 
@@ -46,8 +48,24 @@ const subscribe = (callback: () => void) => {
   };
 };
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const theme = useSyncExternalStore<Theme>(subscribe, getThemeSnapshot, () => "light");
+export function ThemeProvider({
+  children,
+  initialTheme,
+}: {
+  children: React.ReactNode;
+  initialTheme?: Theme | null;
+}) {
+  const theme = useSyncExternalStore<Theme>(
+    subscribe,
+    getThemeSnapshot,
+    () => initialTheme ?? "light",
+  );
+
+  useEffect(() => {
+    if (initialTheme && typeof window !== "undefined" && !window.localStorage.getItem(storageKey)) {
+      window.localStorage.setItem(storageKey, initialTheme);
+    }
+  }, [initialTheme]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
@@ -61,6 +79,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         const nextTheme = theme === "dark" ? "light" : "dark";
         window.localStorage.setItem(storageKey, nextTheme);
         window.dispatchEvent(new StorageEvent("storage", { key: storageKey, newValue: nextTheme }));
+        startTransition(() => {
+          void setThemePreferenceAction(nextTheme);
+        });
       },
     }),
     [theme],

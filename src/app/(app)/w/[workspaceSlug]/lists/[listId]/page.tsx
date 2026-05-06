@@ -74,11 +74,13 @@ export default async function ListPage({
           basePath={routes.list(workspace.slug, detail.list.id)}
           listId={detail.list.id}
           workspaceSlug={workspace.slug}
+          fields={detail.fields}
+          relationOptions={detail.relationOptions}
         />
         <ListFilters
           fields={detail.fields}
-          currentSortField={detail.queryState.sortField}
-          currentSortDir={detail.queryState.sortDir}
+          queryState={detail.queryState}
+          relationOptions={detail.relationOptions}
         />
       </div>
 
@@ -103,6 +105,8 @@ export default async function ListPage({
             workspaceId={workspace.id}
             workspaceSlug={workspace.slug}
             queryState={detail.queryState}
+            fields={detail.fields}
+            relationOptions={detail.relationOptions}
           />
 
           {detail.role === "owner" || detail.role === "editor" ? (

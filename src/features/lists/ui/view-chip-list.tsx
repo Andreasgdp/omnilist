@@ -1,5 +1,9 @@
+import { Circle, Star, Trash2 } from "lucide-react";
+
+import { describeQueryState } from "@/features/lists/lib/query-state-display";
 import { serializeListQueryState, type ListQueryState } from "@/features/lists/lib/query-state";
 import { deleteListViewAction, favoriteListViewAction, setDefaultListViewAction } from "@/features/lists/server/actions";
+import type { FieldDefinition } from "@/shared/lib/list-schema";
 import { NavLink } from "@/shared/ui/nav-link";
 
 export function ViewChipList({
@@ -7,11 +11,15 @@ export function ViewChipList({
   basePath,
   listId,
   workspaceSlug,
+  fields,
+  relationOptions,
 }: {
   views: Array<{ id: string; name: string; state: ListQueryState; isFavorite: string; isDefault: string }>;
   basePath: string;
   listId: string;
   workspaceSlug: string;
+  fields: FieldDefinition[];
+  relationOptions?: Record<string, Array<{ id: string; label: string }>>;
 }) {
   if (views.length === 0) {
     return null;
@@ -28,15 +36,24 @@ export function ViewChipList({
 
       <div className="flex flex-wrap gap-2">
       {views.map((view) => (
-        <div key={view.id} className="flex items-center gap-2 rounded-full border border-border/70 bg-card pr-2">
+        <div key={view.id} className="motion-pill flex items-center gap-2 rounded-2xl border border-border/70 bg-card pr-2 shadow-sm shadow-primary/5">
           <NavLink
             href={`${basePath}?${serializeListQueryState(view.state)}`}
-            className="inline-flex rounded-full px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
+            className="inline-flex min-w-0 rounded-2xl px-3 py-2 text-sm font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground"
           >
-            <span className="flex items-center gap-2">
-              {view.isFavorite === "true" ? <span aria-hidden="true">★</span> : null}
-              {view.isDefault === "true" ? <span aria-hidden="true">●</span> : null}
+            <span className="flex min-w-0 flex-col items-start gap-1">
+              <span className="flex items-center gap-2">
+              {view.isFavorite === "true" ? <Star className="size-3.5 fill-current text-amber-500" aria-hidden="true" /> : null}
+              {view.isDefault === "true" ? <Circle className="size-2.5 fill-current text-primary" aria-hidden="true" /> : null}
               {view.name}
+              </span>
+              <span className="max-w-72 truncate text-xs text-muted-foreground/80">
+                {describeQueryState({
+                  state: view.state,
+                  fields,
+                  relationOptions,
+                }).join(" • ") || "Saved view"}
+              </span>
             </span>
           </NavLink>
 
@@ -44,8 +61,8 @@ export function ViewChipList({
             <input type="hidden" name="viewId" value={view.id} />
             <input type="hidden" name="listId" value={listId} />
             <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
-            <button type="submit" className="text-xs text-muted-foreground transition hover:text-foreground">
-              ☆
+            <button type="submit" className="rounded-full p-1 text-muted-foreground transition hover:bg-primary/10 hover:text-foreground" aria-label={`Favorite ${view.name}`}>
+              <Star className="size-3.5" />
             </button>
           </form>
 
@@ -53,8 +70,8 @@ export function ViewChipList({
             <input type="hidden" name="viewId" value={view.id} />
             <input type="hidden" name="listId" value={listId} />
             <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
-            <button type="submit" className="text-xs text-muted-foreground transition hover:text-foreground">
-              Set default
+            <button type="submit" className="rounded-full p-1 text-muted-foreground transition hover:bg-primary/10 hover:text-foreground" aria-label={`Set ${view.name} as default`}>
+              <Circle className="size-3.5" />
             </button>
           </form>
 
@@ -62,8 +79,8 @@ export function ViewChipList({
             <input type="hidden" name="viewId" value={view.id} />
             <input type="hidden" name="listId" value={listId} />
             <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
-            <button type="submit" className="text-xs text-muted-foreground transition hover:text-destructive">
-              Delete
+            <button type="submit" className="rounded-full p-1 text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive" aria-label={`Delete ${view.name}`}>
+              <Trash2 className="size-3.5" />
             </button>
           </form>
         </div>

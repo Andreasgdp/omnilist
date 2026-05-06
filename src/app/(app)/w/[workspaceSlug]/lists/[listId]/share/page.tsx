@@ -32,27 +32,32 @@ export default async function ShareListPage({
   });
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Share list</CardTitle>
-        <CardDescription>
-          Owners can grant editor or viewer access. Editors can only grant viewers.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ShareListForm
-          listId={detail.list.id}
-          workspaceId={workspace.id}
-          workspaceSlug={workspace.slug}
-          members={members
-            .filter((member) => member.userId !== session.user.id)
-            .map((member) => ({
-              userId: member.userId,
-              userName: member.user.name,
-              userEmail: member.user.email,
-            }))}
-        />
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <Card className="border-border/60 bg-card/90 shadow-sm">
+        <CardHeader>
+          <CardTitle>Share list</CardTitle>
+          <CardDescription>
+            Owners can grant editor or viewer access. Editors can only grant viewers.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
+      <Card className="border-border/60 bg-card/90 shadow-sm">
+        <CardContent className="pt-6">
+          <ShareListForm
+            listId={detail.list.id}
+            workspaceId={workspace.id}
+            workspaceSlug={workspace.slug}
+            members={members
+              .filter((member) => member.userId !== session.user.id)
+              .map((member) => ({
+                userId: member.userId,
+                userName: member.user.name,
+                userEmail: member.user.email,
+              }))}
+          />
+        </CardContent>
+      </Card>
+    </div>
   );
 }

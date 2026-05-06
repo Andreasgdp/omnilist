@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { getThemePreference } from "@/features/auth/server/theme";
 import { ThemeProvider } from "@/shared/ui/theme-provider";
 import "./globals.css";
 import "@blocknote/core/fonts/inter.css";
@@ -29,11 +30,13 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const themePreference = await getThemePreference();
+
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased ${themePreference === "dark" ? "dark" : ""}`}>
       <body className="min-h-full bg-background text-foreground">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider initialTheme={themePreference}>{children}</ThemeProvider>
       </body>
     </html>
   );

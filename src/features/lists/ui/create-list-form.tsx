@@ -1,10 +1,10 @@
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { ListSchemaForm } from "@/features/lists/ui/list-schema-form";
 import type { FieldDefinition } from "@/shared/lib/list-schema";
+import { PendingButton } from "@/shared/ui/pending-button";
 
 export function CreateListForm({
   action,
@@ -70,7 +70,7 @@ export function CreateListForm({
         <ListSchemaForm initialFields={initialFields} availableLists={availableLists} allowReorder={allowReorder} />
       </div>
 
-      <Button type="submit" className="rounded-full px-5">{submitLabel}</Button>
+      <PendingButton type="submit" className="motion-press rounded-full px-5" pendingLabel="Saving...">{submitLabel}</PendingButton>
     </form>
   );
 }

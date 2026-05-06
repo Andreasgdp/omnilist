@@ -7,22 +7,31 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import type { ListQueryState } from "@/features/lists/lib/query-state";
 import type { FieldDefinition } from "@/shared/lib/list-schema";
 
 type Props = {
   fields: FieldDefinition[];
-  currentSortField?: string;
-  currentSortDir?: "asc" | "desc";
+  queryState: ListQueryState;
+  relationOptions?: Record<string, Array<{ id: string; label: string }>>;
 };
 
-export function ListFilters({ fields, currentSortField, currentSortDir }: Props) {
+export function ListFilters({ fields, queryState, relationOptions }: Props) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [sortField, setSortField] = useState(currentSortField ?? "");
-  const [sortDir, setSortDir] = useState(currentSortDir ?? "asc");
-  const [filterField, setFilterField] = useState(fields[0]?.key ?? "");
-  const [filterValue, setFilterValue] = useState("");
+  const firstFilter = queryState.filters[0];
+  const [sortField, setSortField] = useState(queryState.sortField ?? "");
+  const [sortDir, setSortDir] = useState(queryState.sortDir ?? "asc");
+  const [filterField, setFilterField] = useState(firstFilter?.field ?? fields[0]?.key ?? "");
+  const [filterValue, setFilterValue] = useState(firstFilter?.value ?? "");
+  const selectedSortField = fields.find((field) => field.key === sortField);
+  const selectedFilterField = fields.find((field) => field.key === filterField);
+  const selectedFilterValueLabel = selectedFilterField?.type === "select"
+    ? selectedFilterField.options?.find((option) => option.value === filterValue)?.label
+    : selectedFilterField?.type === "relation"
+      ? relationOptions?.[selectedFilterField.key]?.find((option) => option.id === filterValue)?.label
+      : undefined;
 
   return (
     <div className="rounded-2xl border border-border/60 bg-card/90 p-5 shadow-sm">
@@ -37,8 +46,8 @@ export function ListFilters({ fields, currentSortField, currentSortDir }: Props)
               }
             }}
           >
-            <SelectTrigger>
-              <SelectValue placeholder="Newest first" />
+            <SelectTrigger className="transition-all duration-200 hover:border-primary/60 hover:bg-primary/4">
+              <span className="truncate text-left text-sm">{selectedSortField?.label ?? "Newest first"}</span>
             </SelectTrigger>
             <SelectContent>
               {fields.map((field) => (
@@ -53,7 +62,7 @@ export function ListFilters({ fields, currentSortField, currentSortDir }: Props)
         <div className="space-y-2">
           <Label>Direction</Label>
           <Select value={sortDir} onValueChange={(value) => setSortDir(value as "asc" | "desc")}>
-            <SelectTrigger>
+            <SelectTrigger className="transition-all duration-200 hover:border-primary/60 hover:bg-primary/4">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -74,8 +83,8 @@ export function ListFilters({ fields, currentSortField, currentSortDir }: Props)
                 }
               }}
             >
-              <SelectTrigger>
-                <SelectValue />
+              <SelectTrigger className="transition-all duration-200 hover:border-primary/60 hover:bg-primary/4">
+                <span className="truncate text-left text-sm">{selectedFilterField?.label ?? "Choose a field"}</span>
               </SelectTrigger>
               <SelectContent>
                 {fields.map((field) => (
@@ -85,14 +94,43 @@ export function ListFilters({ fields, currentSortField, currentSortDir }: Props)
                 ))}
               </SelectContent>
             </Select>
-            <Input value={filterValue} onChange={(event) => setFilterValue(event.target.value)} placeholder="Search value" />
+
+            {selectedFilterField?.type === "select" ? (
+              <Select value={filterValue || undefined} onValueChange={(value) => setFilterValue(value ?? "")}>
+                <SelectTrigger className="transition-all duration-200 hover:border-primary/60 hover:bg-primary/4">
+                  <span className="truncate text-left text-sm">{selectedFilterValueLabel ?? "Choose a value"}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  {(selectedFilterField.options ?? []).map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : selectedFilterField?.type === "relation" ? (
+              <Select value={filterValue || undefined} onValueChange={(value) => setFilterValue(value ?? "")}>
+                <SelectTrigger className="transition-all duration-200 hover:border-primary/60 hover:bg-primary/4">
+                  <span className="truncate text-left text-sm">{selectedFilterValueLabel ?? "Choose an item"}</span>
+                </SelectTrigger>
+                <SelectContent>
+                  {(relationOptions?.[selectedFilterField.key] ?? []).map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input value={filterValue} onChange={(event) => setFilterValue(event.target.value)} placeholder="Search value" className="transition-all duration-200 hover:border-primary/60 focus-visible:scale-[1.01]" />
+            )}
           </div>
         </div>
 
         <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-end">
           <Button
             type="button"
-            className="rounded-full px-5"
+            className="motion-press rounded-full px-5 shadow-sm shadow-primary/10"
             onClick={() => {
               const params = new URLSearchParams(searchParams.toString());
 
@@ -127,7 +165,7 @@ export function ListFilters({ fields, currentSortField, currentSortDir }: Props)
           <Button
             type="button"
             variant="outline"
-            className="rounded-full px-5"
+            className="motion-press rounded-full px-5"
             onClick={() => {
               router.push(pathname);
             }}

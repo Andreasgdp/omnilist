@@ -41,7 +41,7 @@ export default async function ListsPage({
 
           return (
             <NavLink key={list.id} href={routes.list(workspace.slug, list.id)} className="block">
-              <Card className={`border-border/60 bg-gradient-to-br ${palette} shadow-sm transition duration-200 hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-md`}>
+              <Card className={`border-border/60 bg-gradient-to-br ${palette} shadow-sm`}>
                 <CardHeader>
                   <div className="flex items-center justify-between gap-3">
                     <CardTitle className="text-lg">{list.name}</CardTitle>
@@ -54,7 +54,7 @@ export default async function ListsPage({
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <span className="inline-flex h-10 items-center rounded-full border border-border/70 bg-background/70 px-4 text-sm font-medium transition hover:bg-background dark:bg-card/60">
+                  <span className="motion-pill inline-flex h-10 items-center rounded-full border border-border/70 bg-background/70 px-4 text-sm font-medium dark:bg-card/60">
                     Open list
                   </span>
                 </CardContent>

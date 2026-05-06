@@ -8,7 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { fieldTypeLabels, type FieldDefinition, type FieldType } from "@/shared/lib/list-schema";
+import { coreListFields, fieldTypeLabels, type FieldDefinition, type FieldType } from "@/shared/lib/list-schema";
+import { FieldTypeIcon } from "@/shared/ui/field-type-icon";
 
 const createFieldKey = (label: string) =>
   label
@@ -69,10 +70,7 @@ const quickAddFieldTypes: Array<{ label: string; type: FieldType }> = [
   { label: "Linked item", type: "relation" },
 ];
 
-const defaultFields: FieldDefinition[] = [
-  { key: "title", label: "Title", type: "text", required: true },
-  { key: "description", label: "Description", type: "text", required: false },
-];
+const defaultFields: FieldDefinition[] = [{ ...coreListFields.title }, { ...coreListFields.description }];
 
 export function ListSchemaForm({
   name = "schema",
@@ -120,7 +118,7 @@ export function ListSchemaForm({
         <div>
           <p className="text-sm font-medium">Add fields quickly</p>
           <p className="text-sm text-muted-foreground">
-            Start simple. Field IDs are filled in automatically from the label.
+            Start simple. New fields are set up automatically from the name you choose.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -148,12 +146,18 @@ export function ListSchemaForm({
         </div>
       </div>
 
-      {fields.map((field, index) => (
+      {fields.map((field, index) => {
+        const isCoreField = field.key === coreListFields.title.key || field.key === coreListFields.description.key;
+
+        return (
         <div key={`${field.key}-${index}`} className="grid gap-3 rounded-2xl border border-border/60 bg-card/80 p-4 md:grid-cols-4">
           <div className="md:col-span-4 flex items-center justify-between gap-3">
             <div>
               <p className="text-sm font-medium">Field {index + 1}</p>
-              <p className="text-xs text-muted-foreground">{fieldTypeLabels[field.type]}</p>
+              <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+                <FieldTypeIcon type={field.type} className="size-3.5" />
+                {fieldTypeLabels[field.type]}
+              </p>
             </div>
             <div className="flex items-center gap-2">
               {allowReorder ? (
@@ -180,7 +184,7 @@ export function ListSchemaForm({
                   </Button>
                 </>
               ) : null}
-              {fields.length > 1 ? (
+              {fields.length > 1 && !isCoreField ? (
                 <Button
                   type="button"
                   variant="ghost"
@@ -197,39 +201,20 @@ export function ListSchemaForm({
             <Label>Label</Label>
             <Input
               value={field.label}
+              disabled={isCoreField}
               onChange={(event) => {
-                const nextLabel = event.target.value;
-                const currentAutoKey = createFieldKey(field.label || "field");
-                const shouldUpdateKey = !field.key || field.key === currentAutoKey;
-                const nextKey = shouldUpdateKey
-                  ? ensureUniqueFieldKey(fields, createFieldKey(nextLabel || "field"), index)
-                  : field.key;
-                updateField(index, { ...field, label: nextLabel, key: nextKey });
+                updateField(index, { ...field, label: event.target.value });
               }}
             />
+            {isCoreField ? <p className="text-xs text-muted-foreground">Built in for every item.</p> : null}
           </div>
 
-          <div className="space-y-2">
-            <Label>Field ID</Label>
-            <Input
-              value={field.key}
-              placeholder="Filled in automatically"
-              onChange={(event) => {
-                updateField(index, {
-                  ...field,
-                  key: ensureUniqueFieldKey(fields, createFieldKey(event.target.value), index),
-                });
-              }}
-            />
-            <p className="text-xs text-muted-foreground">Used behind the scenes for saved data.</p>
-          </div>
-
-          <div className="space-y-2">
+          <div className="space-y-2 md:col-span-2">
             <Label>Type</Label>
             <Select
               value={field.type}
               onValueChange={(value) => {
-                if (!value) {
+                if (!value || isCoreField) {
                   return;
                 }
 
@@ -251,12 +236,18 @@ export function ListSchemaForm({
               }}
             >
               <SelectTrigger>
-                <SelectValue />
+                <span className="inline-flex items-center gap-2 text-sm">
+                  <FieldTypeIcon type={field.type} className="size-4 text-muted-foreground" />
+                  <span>{fieldTypeLabels[field.type]}</span>
+                </span>
               </SelectTrigger>
               <SelectContent>
                 {Object.entries(fieldTypeLabels).map(([value, label]) => (
                   <SelectItem key={value} value={value}>
-                    {label}
+                    <span className="inline-flex items-center gap-2">
+                      <FieldTypeIcon type={value as FieldType} className="size-4 text-muted-foreground" />
+                      {label}
+                    </span>
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -267,6 +258,7 @@ export function ListSchemaForm({
             <div className="flex items-center gap-2">
               <Switch
                 checked={field.required}
+                disabled={isCoreField}
                 onCheckedChange={(checked) => {
                   updateField(index, { ...field, required: checked });
                 }}
@@ -277,6 +269,7 @@ export function ListSchemaForm({
             <div className="flex items-center gap-2">
               <Switch
                 checked={field.multiple ?? false}
+                disabled={isCoreField}
                 onCheckedChange={(checked) => {
                   updateField(index, { ...field, multiple: checked });
                 }}
@@ -340,7 +333,7 @@ export function ListSchemaForm({
             </div>
           ) : null}
         </div>
-      ))}
+      );})}
 
       <Button
         type="button"

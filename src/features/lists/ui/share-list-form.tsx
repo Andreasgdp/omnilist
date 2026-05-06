@@ -1,7 +1,7 @@
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { shareListAction } from "@/features/lists/server/actions";
+import { PendingButton } from "@/shared/ui/pending-button";
 
 export function ShareListForm({
   listId,
@@ -15,7 +15,7 @@ export function ShareListForm({
   members: Array<{ userId: string; userName: string; userEmail: string }>;
 }) {
   return (
-    <form action={shareListAction} className="space-y-4 rounded-lg border bg-card p-4">
+    <form action={shareListAction} className="space-y-4 rounded-2xl border border-border/60 bg-card/80 p-5 shadow-sm">
       <input type="hidden" name="listId" value={listId} />
       <input type="hidden" name="workspaceId" value={workspaceId} />
       <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
@@ -23,7 +23,7 @@ export function ShareListForm({
       <div className="space-y-2">
         <Label>Workspace member</Label>
         <Select name="targetUserId">
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue placeholder="Choose a member" />
           </SelectTrigger>
           <SelectContent>
@@ -39,7 +39,7 @@ export function ShareListForm({
       <div className="space-y-2">
         <Label>Role</Label>
         <Select name="role" defaultValue="viewer">
-          <SelectTrigger>
+          <SelectTrigger className="w-full">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -49,7 +49,7 @@ export function ShareListForm({
         </Select>
       </div>
 
-      <Button type="submit">Share list</Button>
+      <PendingButton type="submit" className="motion-press rounded-full px-5" pendingLabel="Sharing...">Share list</PendingButton>
     </form>
   );
 }

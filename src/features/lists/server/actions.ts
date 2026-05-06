@@ -10,7 +10,7 @@ import { listItems, listMembers, lists, listViews, workspaceMembers } from "@/db
 import { parseListQueryState } from "@/features/lists/lib/query-state";
 import { requireApprovedSession } from "@/features/auth/server/guard";
 import { requireListAccess } from "@/features/lists/server/access";
-import { buildItemSchema, listSchemaDefinitionSchema } from "@/shared/lib/list-schema";
+import { buildItemSchema, coreListFields, listSchemaDefinitionSchema, normalizeListFields, parseStoredListFields } from "@/shared/lib/list-schema";
 import { canEditList, canShareRole, compareListRoles } from "@/shared/lib/permissions";
 import { routes } from "@/shared/lib/routes";
 
@@ -47,7 +47,7 @@ const listInputSchema = z.object({
 export const createListAction = async (formData: FormData) => {
   const session = await requireApprovedSession();
   const input = listInputSchema.parse(Object.fromEntries(formData));
-  const fields = listSchemaDefinitionSchema.parse(JSON.parse(input.schema));
+  const fields = normalizeListFields(listSchemaDefinitionSchema.parse(JSON.parse(input.schema)));
 
   const workspaceMembership = await db.query.workspaceMembers.findFirst({
     where: and(
@@ -91,7 +91,7 @@ const updateListSchema = listInputSchema.extend({
 export const updateListAction = async (formData: FormData) => {
   const session = await requireApprovedSession();
   const input = updateListSchema.parse(Object.fromEntries(formData));
-  const fields = listSchemaDefinitionSchema.parse(JSON.parse(input.schema));
+  const fields = normalizeListFields(listSchemaDefinitionSchema.parse(JSON.parse(input.schema)));
 
   const workspaceMembership = await db.query.workspaceMembers.findFirst({
     where: and(
@@ -137,7 +137,7 @@ const quickAddFieldSchema = z.object({
   workspaceId: z.string().uuid(),
   workspaceSlug: z.string().min(1),
   label: z.string().min(1),
-  type: z.enum(["text", "boolean", "select", "date", "relation"]),
+  type: z.enum(["text", "number", "boolean", "date", "url", "select", "image", "file", "document", "relation"]),
   targetListId: z.string().uuid().optional(),
 });
 
@@ -167,7 +167,7 @@ export const quickAddFieldAction = async (formData: FormData) => {
     throw new Error("List edit access denied");
   }
 
-  const fields = listSchemaDefinitionSchema.parse(access.list.schema);
+  const fields = parseStoredListFields(access.list.schema);
   const existingKeys = new Set(fields.map((field) => field.key));
   const nextField = {
     key: ensureUniqueFieldKey(existingKeys, createFieldKey(input.label)),
@@ -194,7 +194,7 @@ export const quickAddFieldAction = async (formData: FormData) => {
   await db
     .update(lists)
     .set({
-      schema: [...fields, nextField],
+      schema: normalizeListFields([...fields, nextField]),
       updatedAt: new Date(),
     })
     .where(and(eq(lists.id, input.listId), eq(lists.workspaceId, input.workspaceId)));
@@ -237,7 +237,7 @@ export const saveFieldAction = async (formData: FormData) => {
     throw new Error("List edit access denied");
   }
 
-  const fields = listSchemaDefinitionSchema.parse(access.list.schema);
+  const fields = parseStoredListFields(access.list.schema);
   const fieldIndex = fields.findIndex((field) => field.key === input.originalKey);
 
   if (fieldIndex === -1) {
@@ -245,14 +245,20 @@ export const saveFieldAction = async (formData: FormData) => {
   }
 
   const [nextField] = listSchemaDefinitionSchema.parse([JSON.parse(input.field)]);
+  const currentField = fields[fieldIndex];
+  const sanitizedField = {
+    ...nextField,
+    // Preserve the stored data key for existing fields so renaming stays cosmetic.
+    key: currentField.key,
+  };
   const nextFields = [...fields];
-  nextFields[fieldIndex] = nextField;
-  listSchemaDefinitionSchema.parse(nextFields);
+  nextFields[fieldIndex] = sanitizedField;
+  const normalizedFields = normalizeListFields(nextFields);
 
   await db
     .update(lists)
     .set({
-      schema: nextFields,
+      schema: normalizedFields,
       updatedAt: new Date(),
     })
     .where(and(eq(lists.id, input.listId), eq(lists.workspaceId, input.workspaceId)));
@@ -266,6 +272,14 @@ const deleteFieldSchema = z.object({
   workspaceId: z.string().uuid(),
   workspaceSlug: z.string().min(1),
   originalKey: z.string().min(1),
+});
+
+const moveFieldSchema = z.object({
+  listId: z.string().uuid(),
+  workspaceId: z.string().uuid(),
+  workspaceSlug: z.string().min(1),
+  originalKey: z.string().min(1),
+  direction: z.enum(["left", "right"]),
 });
 
 export const deleteFieldAction = async (formData: FormData) => {
@@ -294,18 +308,77 @@ export const deleteFieldAction = async (formData: FormData) => {
     throw new Error("List edit access denied");
   }
 
-  const fields = listSchemaDefinitionSchema.parse(access.list.schema);
+  const fields = parseStoredListFields(access.list.schema);
 
-  if (fields.length <= 1) {
-    throw new Error("Lists need at least one field");
+  if (input.originalKey === coreListFields.title.key || input.originalKey === coreListFields.description.key) {
+    throw new Error("Title and description cannot be removed");
   }
 
-  const nextFields = fields.filter((field) => field.key !== input.originalKey);
+  if (fields.length <= 2) {
+    throw new Error("Lists need title and description");
+  }
+
+  const nextFields = normalizeListFields(fields.filter((field) => field.key !== input.originalKey));
 
   await db
     .update(lists)
     .set({
       schema: nextFields,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(lists.id, input.listId), eq(lists.workspaceId, input.workspaceId)));
+
+  revalidatePath(routes.list(input.workspaceSlug, input.listId));
+  revalidatePath(routes.listSettings(input.workspaceSlug, input.listId));
+};
+
+export const moveFieldAction = async (formData: FormData) => {
+  const session = await requireApprovedSession();
+  const input = moveFieldSchema.parse(Object.fromEntries(formData));
+
+  const workspaceMembership = await db.query.workspaceMembers.findFirst({
+    where: and(
+      eq(workspaceMembers.workspaceId, input.workspaceId),
+      eq(workspaceMembers.userId, session.user.id),
+    ),
+  });
+
+  if (!workspaceMembership) {
+    throw new Error("Workspace access denied");
+  }
+
+  const access = await requireListAccess({
+    listId: input.listId,
+    userId: session.user.id,
+    workspaceId: input.workspaceId,
+    workspaceRole: workspaceMembership.role,
+  });
+
+  if (!canEditList(access.role)) {
+    throw new Error("List edit access denied");
+  }
+
+  const fields = parseStoredListFields(access.list.schema);
+  const fieldIndex = fields.findIndex((field) => field.key === input.originalKey);
+
+  if (fieldIndex === -1) {
+    throw new Error("Field not found");
+  }
+
+  const nextIndex = input.direction === "left" ? fieldIndex - 1 : fieldIndex + 1;
+
+  if (nextIndex < 0 || nextIndex >= fields.length) {
+    return;
+  }
+
+  const nextFields = [...fields];
+  const [field] = nextFields.splice(fieldIndex, 1);
+  nextFields.splice(nextIndex, 0, field);
+
+  await db
+    .update(lists)
+    .set({
+      schema: normalizeListFields(nextFields),
       updatedAt: new Date(),
     })
     .where(and(eq(lists.id, input.listId), eq(lists.workspaceId, input.workspaceId)));
@@ -349,7 +422,7 @@ export const createItemAction = async (formData: FormData) => {
   }
 
   const payload = JSON.parse(input.payload) as Record<string, unknown>;
-  const fields = listSchemaDefinitionSchema.parse(access.list.schema);
+  const fields = parseStoredListFields(access.list.schema);
   const itemSchema = buildItemSchema(fields);
   const data = itemSchema.parse(payload);
   const [{ value: itemCount }] = await db
@@ -409,7 +482,7 @@ export const updateItemAction = async (formData: FormData) => {
   }
 
   const payload = JSON.parse(input.payload) as Record<string, unknown>;
-  const fields = listSchemaDefinitionSchema.parse(access.list.schema);
+  const fields = parseStoredListFields(access.list.schema);
   const itemSchema = buildItemSchema(fields);
   const data = itemSchema.parse(payload);
 

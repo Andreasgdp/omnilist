@@ -29,6 +29,13 @@
       "when": 1778052669650,
       "tag": "0004_faithful_shen",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1778056320645,
+      "tag": "0005_theme_preference",
+      "breakpoints": true
     }
   ]
 }

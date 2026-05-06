@@ -71,7 +71,7 @@ export default async function WorkspaceOverviewPage({
                   <NavLink
                     key={list.id}
                     href={routes.list(workspace.slug, list.id)}
-                    className={`block rounded-3xl border border-white/40 p-4 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:scale-[1.01] hover:shadow-md ${palette}`}
+                    className={`motion-card block rounded-3xl border border-white/40 p-4 shadow-sm ${palette}`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <h3 className="font-semibold">{list.name}</h3>

@@ -1,6 +1,6 @@
 {
-  "id": "02445409-fda5-4b7f-9d94-b6f474c8d0c3",
-  "prevId": "d281d8c8-f362-44d6-ae82-50e816cd3f2e",
+  "id": "3789a6fb-cbfd-4312-bdf0-711f204c5d95",
+  "prevId": "02445409-fda5-4b7f-9d94-b6f474c8d0c3",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -276,6 +276,12 @@
         },
         "image": {
           "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "theme_preference": {
+          "name": "theme_preference",
           "type": "text",
           "primaryKey": false,
           "notNull": false

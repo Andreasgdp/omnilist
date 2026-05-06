@@ -4,7 +4,7 @@ import { db } from "@/db/client";
 import { listItems, listMembers, lists, listViews, workspaceMembers } from "@/db/schema";
 import { parseListQueryState } from "@/features/lists/lib/query-state";
 import { requireListAccess } from "@/features/lists/server/access";
-import { buildItemSchema, listSchemaDefinitionSchema, type ListSchemaDefinition } from "@/shared/lib/list-schema";
+import { buildItemSchema, repairStoredListFields, type ListSchemaDefinition } from "@/shared/lib/list-schema";
 
 const compareValues = (left: unknown, right: unknown) => {
   if (typeof left === "number" && typeof right === "number") {
@@ -133,7 +133,7 @@ const buildRelationOptions = async ({
       field.key,
       (itemsByListId[field.targetListId!] ?? []).map((item) => ({
         id: item.id,
-        label: String(item.data.title ?? item.data.name ?? item.id),
+        label: String(item.data.title ?? item.data.name ?? "Untitled item"),
       })),
     ]),
   );
@@ -191,7 +191,18 @@ export const getListDetail = async ({
     workspaceRole: workspaceMembership.role,
   });
 
-  const fields = listSchemaDefinitionSchema.parse(access.list.schema);
+  const repairedSchema = repairStoredListFields(access.list.schema);
+  const fields = repairedSchema.fields;
+
+  if (repairedSchema.changed) {
+    await db
+      .update(lists)
+      .set({
+        schema: fields,
+      })
+      .where(and(eq(lists.id, listId), eq(lists.workspaceId, workspaceId)));
+  }
+
   const itemSchema = buildItemSchema(fields);
   const rawItems = await db.query.listItems.findMany({
     where: eq(listItems.listId, listId),

@@ -59,6 +59,38 @@ function ListTableInner({
   canEditSchema: boolean;
 }) {
   const titleFieldKey = fields[0]?.key;
+  const getSelectLabel = useCallback((field: FieldDefinition, value: unknown) => {
+    if (typeof value !== "string") {
+      return value ? String(value) : "-";
+    }
+
+    return field.options?.find((option) => option.value === value)?.label ?? value;
+  }, []);
+
+  const getRelationLabel = useCallback((fieldKey: string, relationId: unknown) => {
+    if (typeof relationId !== "string") {
+      return relationId ? String(relationId) : "-";
+    }
+
+    const related = relatedById?.[relationId];
+    if (related) {
+      return String(related.data.title ?? related.data.name ?? relationId);
+    }
+
+    return relationOptions?.[fieldKey]?.find((option) => option.id === relationId)?.label ?? relationId;
+  }, [relatedById, relationOptions]);
+
+  const getFieldWidthClass = (field: FieldDefinition) => {
+    switch (field.width ?? "regular") {
+      case "compact":
+        return "w-[8rem] md:w-[10rem]";
+      case "wide":
+        return "w-[18rem] md:w-[24rem]";
+      default:
+        return "w-[12rem] md:w-[16rem]";
+    }
+  };
+
   const extraColumnCount = canEditSchema ? 2 : 0;
   const addRowColSpan = fields.length + extraColumnCount;
   const [orderedItems, setOrderedItems] = useState(items);
@@ -218,16 +250,17 @@ function ListTableInner({
           <input type="hidden" name="orderedItemIds" value={orderedItemIdsPayload} readOnly />
         </form>
 
-        <Table>
+        <Table className="border-separate border-spacing-0">
           <TableHeader>
-            <TableRow>
-              {canEditSchema ? <TableHead className="w-10" /> : null}
+            <TableRow className="bg-muted/35">
+              {canEditSchema ? <TableHead className="w-12 border-b border-border/70 px-2 text-center align-middle" /> : null}
               {fields.map((field) => (
-                <TableHead key={field.key} className={mobileVisibleFieldKeys.has(field.key) ? "" : "hidden md:table-cell"}>
+                <TableHead key={field.key} className={`${mobileVisibleFieldKeys.has(field.key) ? "" : "hidden md:table-cell"} border-b border-border/70 bg-background/65 px-2 py-2 align-middle first:pl-3`}>
                   {canEditSchema ? (
                     <FieldHeaderEditor
                       field={field}
                       fieldsCount={fields.length}
+                      fieldIndex={fields.findIndex((candidate) => candidate.key === field.key)}
                       workspaceId={workspaceId}
                       workspaceSlug={workspaceSlug}
                       listId={listId}
@@ -239,7 +272,7 @@ function ListTableInner({
                 </TableHead>
               ))}
               {canEditSchema ? (
-                <TableHead className="w-12 text-right">
+                <TableHead className="w-12 border-b border-border/70 bg-background/65 px-2 py-2 text-center align-middle">
                   <AddFieldButton
                     workspaceId={workspaceId}
                     workspaceSlug={workspaceSlug}
@@ -321,16 +354,16 @@ function ListTableInner({
                     ref={(node) => {
                       rowRefs.current[item.id] = node;
                     }}
-                    className={`group transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-muted/40 ${
+                    className={`group relative transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-primary/4 ${
                       draggedItemId === item.id ? "scale-[0.985] bg-muted/50 opacity-30 shadow-sm" : ""
                     } ${getRowMotionClass(index)}`}
                   >
                     {canEditSchema ? (
-                      <TableCell className="w-10 pr-0">
+                      <TableCell className="w-12 border-b border-border/55 px-2 py-3 text-center align-middle">
                         <button
                           type="button"
-                          className={`inline-flex cursor-grab touch-none select-none items-center justify-center rounded-full p-1.5 text-muted-foreground transition-all active:cursor-grabbing sm:opacity-0 sm:group-hover:opacity-100 ${
-                            pressedItemId === item.id ? "scale-110 bg-muted text-foreground shadow-sm" : "opacity-100"
+                          className={`inline-flex size-9 cursor-grab touch-none select-none items-center justify-center rounded-full text-muted-foreground transition-all duration-200 active:cursor-grabbing hover:scale-105 hover:bg-primary/10 hover:text-primary sm:opacity-0 sm:group-hover:opacity-100 ${
+                            pressedItemId === item.id ? "scale-110 bg-primary/12 text-primary shadow-sm" : "opacity-100"
                           }`}
                           aria-label={`Drag ${String(item.data[titleFieldKey ?? ""] ?? "item")}`}
                           aria-keyshortcuts="ArrowUp ArrowDown"
@@ -384,15 +417,15 @@ function ListTableInner({
 
                       if (field.key === titleFieldKey) {
                         return (
-                          <TableCell key={field.key} className={`w-[18rem] md:w-[22rem] ${cellClassName}`}>
+                          <TableCell key={field.key} className={`${getFieldWidthClass(field)} ${cellClassName} border-b border-border/55 px-2 py-2 first:pl-3 align-middle`}>
                             <ItemSheet
                               trigger={
                                 <Button
                                   variant="ghost"
-                                  className="h-auto w-full justify-between px-0 text-left font-medium text-foreground hover:bg-transparent"
+                                  className="h-auto min-h-10 w-full justify-between rounded-xl px-3 py-2 text-left font-medium text-foreground transition-all duration-200 hover:bg-primary/7 hover:shadow-sm"
                                 >
                                   <span className="truncate">{value ? String(value) : "Untitled item"}</span>
-                                  <span className="ml-3 text-muted-foreground opacity-0 transition group-hover:opacity-100" aria-hidden="true">
+                                  <span className="ml-3 text-muted-foreground opacity-0 transition-all duration-200 group-hover:translate-x-0.5 group-hover:opacity-100" aria-hidden="true">
                                     <ChevronRight className="size-4" />
                                   </span>
                                 </Button>
@@ -412,8 +445,10 @@ function ListTableInner({
 
                       if (typeof value === "boolean") {
                         return (
-                          <TableCell key={field.key} className={cellClassName}>
-                            <Badge variant={value ? "default" : "outline"}>{value ? "Yes" : "No"}</Badge>
+                          <TableCell key={field.key} className={`${cellClassName} border-b border-border/55 px-2 py-3 align-top`}>
+                            <div className="flex min-h-10 items-center">
+                              <Badge variant={value ? "default" : "outline"}>{value ? "Yes" : "No"}</Badge>
+                            </div>
                           </TableCell>
                         );
                       }
@@ -421,14 +456,12 @@ function ListTableInner({
                       if (Array.isArray(value)) {
                         if (field.type === "relation") {
                           return (
-                            <TableCell key={field.key} className={cellClassName}>
-                              <div className="flex flex-wrap gap-2">
+                            <TableCell key={field.key} className={`${cellClassName} border-b border-border/55 px-2 py-2 align-middle`}>
+                              <div className="flex min-h-10 flex-wrap items-center gap-2">
                                 {value.map((relationId) => {
-                                  const related = typeof relationId === "string" ? relatedById?.[relationId] : null;
-                                  const label = related?.data.title ?? related?.data.name ?? relationId;
                                   return (
                                     <Badge key={String(relationId)} variant="outline">
-                                      {String(label)}
+                                      {getRelationLabel(field.key, relationId)}
                                     </Badge>
                                   );
                                 })}
@@ -439,43 +472,51 @@ function ListTableInner({
 
                         if (field.type === "document") {
                           return (
-                            <TableCell key={field.key} className={cellClassName}>
-                              <Badge variant="outline">{value.length} block(s)</Badge>
+                            <TableCell key={field.key} className={`${cellClassName} border-b border-border/55 px-2 py-2 align-middle`}>
+                              <div className="flex min-h-10 items-center">
+                                <Badge variant="outline">{value.length} block(s)</Badge>
+                              </div>
                             </TableCell>
                           );
                         }
 
                         return (
-                          <TableCell key={field.key} className={cellClassName}>
-                            <Badge variant="outline">{value.length} file(s)</Badge>
+                          <TableCell key={field.key} className={`${cellClassName} border-b border-border/55 px-2 py-2 align-middle`}>
+                            <div className="flex min-h-10 items-center">
+                              <Badge variant="outline">{value.length} file(s)</Badge>
+                            </div>
                           </TableCell>
                         );
                       }
 
                       if (field.type === "relation" && typeof value === "string") {
-                        const related = relatedById?.[value];
-                        const label = related?.data.title ?? related?.data.name ?? value;
                         return (
-                          <TableCell key={field.key} className={cellClassName}>
-                            <Badge variant="outline">{String(label)}</Badge>
+                          <TableCell key={field.key} className={`${cellClassName} border-b border-border/55 px-2 py-2 align-middle`}>
+                            <div className="flex min-h-10 items-center">
+                              <Badge variant="outline">{getRelationLabel(field.key, value)}</Badge>
+                            </div>
                           </TableCell>
                         );
                       }
 
-                      if (field.type === "document") {
-                        return <TableCell key={field.key} className={cellClassName}><Badge variant="outline">Rich document</Badge></TableCell>;
+                      if (field.type === "select") {
+                        return <TableCell key={field.key} className={`${getFieldWidthClass(field)} ${cellClassName} border-b border-border/55 px-2 py-2 align-middle`}><div className="flex min-h-10 items-center">{getSelectLabel(field, value)}</div></TableCell>;
                       }
 
-                      return <TableCell key={field.key} className={cellClassName}>{value ? String(value) : "-"}</TableCell>;
+                      if (field.type === "document") {
+                        return <TableCell key={field.key} className={`${getFieldWidthClass(field)} ${cellClassName} border-b border-border/55 px-2 py-2 align-middle`}><div className="flex min-h-10 items-center"><Badge variant="outline">Rich document</Badge></div></TableCell>;
+                      }
+
+                      return <TableCell key={field.key} className={`${getFieldWidthClass(field)} ${cellClassName} border-b border-border/55 px-2 py-2 align-middle`}><div className="flex min-h-10 items-center">{value ? String(value) : "-"}</div></TableCell>;
                     })}
                     {canEditSchema ? (
-                      <TableCell className="text-right">
+                      <TableCell className="w-12 border-b border-border/55 px-2 py-2 text-center align-middle">
                         {hiddenFieldCount > 0 ? (
                           <Button
                             type="button"
                             variant="ghost"
-                            size="sm"
-                            className="rounded-full md:hidden"
+                            size="icon-sm"
+                            className="rounded-full md:hidden hover:bg-primary/10 hover:text-primary"
                             onClick={() =>
                               setExpandedMobileItems((current) => ({
                                 ...current,
@@ -491,9 +532,9 @@ function ListTableInner({
                   </TableRow>
 
                   {hiddenFieldCount > 0 && expandedMobileItems[item.id] ? (
-                    <TableRow className="border-0 md:hidden">
+                    <TableRow className="border-0 md:hidden motion-fade-up">
                       <TableCell colSpan={addRowColSpan} className="pt-0 text-xs text-muted-foreground">
-                        <div className="rounded-xl bg-muted/30 px-3 py-2">
+                        <div className="rounded-xl border border-border/45 bg-muted/30 px-3 py-2 shadow-sm shadow-primary/5">
                           {fields.filter((field) => !mobileVisibleFieldKeys.has(field.key)).map((field) => {
                             const value = item.data[field.key];
                             return (
@@ -501,7 +542,13 @@ function ListTableInner({
                                 <span>{field.label}</span>
                                 <span className="truncate text-right text-foreground">
                                   {Array.isArray(value)
-                                    ? `${value.length} item${value.length === 1 ? "" : "s"}`
+                                    ? field.type === "relation"
+                                      ? value.map((relationId) => getRelationLabel(field.key, relationId)).join(", ") || "-"
+                                      : `${value.length} item${value.length === 1 ? "" : "s"}`
+                                    : field.type === "relation"
+                                      ? getRelationLabel(field.key, value)
+                                      : field.type === "select"
+                                        ? getSelectLabel(field, value)
                                     : typeof value === "boolean"
                                       ? value ? "Yes" : "No"
                                       : value ? String(value) : "-"}
@@ -556,7 +603,7 @@ function ListTableInner({
 
         {draggedItemId && pointerPosition && draggedItemTitle ? (
           <div
-            className="pointer-events-none fixed left-0 top-0 z-50 rounded-xl border border-border/70 bg-background/95 px-3 py-2 text-sm font-medium text-foreground shadow-xl backdrop-blur-sm transition-transform duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]"
+            className="pointer-events-none fixed left-0 top-0 z-50 rounded-2xl border border-border/70 bg-background/95 px-3 py-2 text-sm font-medium text-foreground shadow-2xl shadow-primary/15 backdrop-blur-sm transition-transform duration-150 ease-[cubic-bezier(0.22,1,0.36,1)]"
             style={{ transform: `translate(${pointerPosition.x + 16}px, ${pointerPosition.y + 16}px) rotate(1.5deg) scale(1.02)` }}
           >
             {draggedItemTitle}

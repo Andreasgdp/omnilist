@@ -28,6 +28,42 @@ export const fieldTypeLabels: Record<FieldType, string> = {
   relation: "Linked item",
 };
 
+export const coreListFields = {
+  title: {
+    key: "title",
+    label: "Title",
+    type: "text",
+    required: true,
+    multiple: false,
+  },
+  description: {
+    key: "description",
+    label: "Description",
+    type: "text",
+    required: false,
+    multiple: false,
+  },
+} as const satisfies Record<string, {
+  key: string;
+  label: string;
+  type: FieldType;
+  required: boolean;
+  multiple: boolean;
+}>;
+
+export const fieldTypeIconNames: Record<FieldType, string> = {
+  text: "align-left",
+  number: "hash",
+  boolean: "check-square",
+  date: "calendar",
+  url: "link",
+  select: "list-filter",
+  image: "image",
+  file: "paperclip",
+  document: "notebook-pen",
+  relation: "waypoints",
+};
+
 export const documentBlockSchema = z.object({
   id: z.string(),
   type: z.string(),
@@ -45,6 +81,7 @@ export const fieldDefinitionSchema = z.object({
   label: z.string().min(1),
   type: fieldTypeSchema,
   required: z.boolean().default(false),
+  width: z.enum(["compact", "regular", "wide"]).optional(),
   multiple: z.boolean().optional(),
   targetListId: z.string().uuid().optional(),
   options: z
@@ -57,8 +94,51 @@ export const fieldDefinitionSchema = z.object({
     .optional(),
 });
 
+const storedListSchemaDefinitionSchema = z.array(fieldDefinitionSchema);
+
+const withCoreListFields = (fields: FieldDefinition[]) => {
+  const nextFields = [...fields];
+
+  if (!nextFields.some((field) => field.key === coreListFields.title.key)) {
+    nextFields.unshift({ ...coreListFields.title });
+  }
+
+  if (!nextFields.some((field) => field.key === coreListFields.description.key)) {
+    nextFields.splice(1, 0, { ...coreListFields.description });
+  }
+
+  return nextFields;
+};
+
+const ensureUniqueFieldLabels = (fields: FieldDefinition[]) => {
+  const usedLabels = new Set<string>();
+
+  return fields.map((field) => {
+    const baseLabel = field.label.trim() || "Field";
+    let nextLabel = baseLabel;
+    let suffix = 2;
+
+    while (usedLabels.has(nextLabel.toLowerCase())) {
+      nextLabel = `${baseLabel} ${suffix}`;
+      suffix += 1;
+    }
+
+    usedLabels.add(nextLabel.toLowerCase());
+
+    if (nextLabel === field.label) {
+      return field;
+    }
+
+    return {
+      ...field,
+      label: nextLabel,
+    };
+  });
+};
+
 export const listSchemaDefinitionSchema = z.array(fieldDefinitionSchema).superRefine((fields, ctx) => {
   const keys = new Set<string>();
+  const labels = new Set<string>();
 
   for (const field of fields) {
     if (keys.has(field.key)) {
@@ -69,6 +149,16 @@ export const listSchemaDefinitionSchema = z.array(fieldDefinitionSchema).superRe
     }
 
     keys.add(field.key);
+
+    const normalizedLabel = field.label.trim().toLowerCase();
+    if (labels.has(normalizedLabel)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Duplicate field label: ${field.label}`,
+      });
+    }
+
+    labels.add(normalizedLabel);
 
     if (field.type === "select" && (!field.options || field.options.length === 0)) {
       ctx.addIssue({
@@ -88,6 +178,24 @@ export const listSchemaDefinitionSchema = z.array(fieldDefinitionSchema).superRe
 
 export type FieldDefinition = z.infer<typeof fieldDefinitionSchema>;
 export type ListSchemaDefinition = z.infer<typeof listSchemaDefinitionSchema>;
+
+export const normalizeListFields = (fields: FieldDefinition[]): ListSchemaDefinition => {
+  return listSchemaDefinitionSchema.parse(withCoreListFields(fields));
+};
+
+export const repairStoredListFields = (fields: unknown) => {
+  const parsedFields = storedListSchemaDefinitionSchema.parse(fields);
+  const repairedFields = listSchemaDefinitionSchema.parse(ensureUniqueFieldLabels(withCoreListFields(parsedFields)));
+
+  return {
+    fields: repairedFields,
+    changed: JSON.stringify(parsedFields) !== JSON.stringify(repairedFields),
+  };
+};
+
+export const parseStoredListFields = (fields: unknown): ListSchemaDefinition => {
+  return repairStoredListFields(fields).fields;
+};
 
 export const buildItemSchema = (fields: ListSchemaDefinition) => {
   const shape = Object.fromEntries(

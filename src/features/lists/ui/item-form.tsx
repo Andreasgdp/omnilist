@@ -6,11 +6,12 @@ import { Button } from "@/components/ui/button";
 import { DocumentEditor } from "@/features/lists/ui/document-editor";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { createItemAction, updateItemAction } from "@/features/lists/server/actions";
 import type { FieldDefinition } from "@/shared/lib/list-schema";
+import { FieldTypeIcon } from "@/shared/ui/field-type-icon";
 
 const getFieldPlaceholder = (field: FieldDefinition) => {
   switch (field.type) {
@@ -52,6 +53,14 @@ export function ItemForm({
 }: Props) {
   const [values, setValues] = useState<Record<string, unknown>>(initialValues ?? {});
 
+  const clearValue = (fieldKey: string) => {
+    setValues((current) => {
+      const next = { ...current };
+      delete next[fieldKey];
+      return next;
+    });
+  };
+
   const payload = useMemo(() => JSON.stringify(values), [values]);
   const action = mode === "create" ? createItemAction : updateItemAction;
 
@@ -70,12 +79,23 @@ export function ItemForm({
       </div>
 
       {fields.map((field) => {
+        const fieldLabel = (
+          <span className="inline-flex items-center gap-2">
+            <FieldTypeIcon type={field.type} className="size-4 text-muted-foreground" />
+            {field.label}
+          </span>
+        );
+        const selectedOptionLabel =
+          typeof values[field.key] === "string"
+            ? field.options?.find((option) => option.value === values[field.key])?.label
+            : undefined;
+
         if (field.type === "boolean") {
           return (
             <div key={field.key} className="rounded-2xl border border-border/60 bg-muted/20 p-4">
               <div className="flex items-center justify-between gap-4">
                 <div className="space-y-1">
-                  <Label>{field.label}</Label>
+                  <Label>{fieldLabel}</Label>
                   <p className="text-xs text-muted-foreground">Turn this on if it applies.</p>
                 </div>
                 <Switch
@@ -92,7 +112,7 @@ export function ItemForm({
         if (field.type === "select") {
           return (
             <div key={field.key} className="space-y-2">
-              <Label>{field.label}</Label>
+              <Label>{fieldLabel}</Label>
               <Select
                 value={typeof values[field.key] === "string" ? (values[field.key] as string) : undefined}
                 onValueChange={(value) =>
@@ -100,7 +120,9 @@ export function ItemForm({
                 }
               >
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder={`Choose ${field.label.toLowerCase()}`} />
+                  <span className="truncate text-left text-sm">
+                    {selectedOptionLabel ?? `Choose ${field.label.toLowerCase()}`}
+                  </span>
                 </SelectTrigger>
                 <SelectContent>
                   {(field.options ?? []).map((option) => (
@@ -117,7 +139,7 @@ export function ItemForm({
         if (field.type === "text") {
           return (
             <div key={field.key} className="space-y-2">
-              <Label>{field.label}</Label>
+              <Label>{fieldLabel}</Label>
               <Textarea
                 required={field.required}
                 placeholder={getFieldPlaceholder(field)}
@@ -133,7 +155,7 @@ export function ItemForm({
         if (field.type === "document") {
           return (
             <div key={field.key} className="space-y-2">
-              <Label>{field.label}</Label>
+              <Label>{fieldLabel}</Label>
               <p className="text-xs text-muted-foreground">Add richer notes, ideas, or steps.</p>
               <DocumentEditor
                 value={Array.isArray(values[field.key]) ? (values[field.key] as never[]) : undefined}
@@ -154,10 +176,10 @@ export function ItemForm({
 
           return (
             <div key={field.key} className="space-y-2">
-              <Label>{field.label}</Label>
-              <Select
-                value={field.multiple ? undefined : selectedRelationId ?? undefined}
-                onValueChange={(value) =>
+              <Label>{fieldLabel}</Label>
+                <Select
+                  value={field.multiple ? undefined : selectedRelationId ?? undefined}
+                  onValueChange={(value) =>
                   setValues((current) => ({
                     ...current,
                     [field.key]: field.multiple
@@ -165,11 +187,13 @@ export function ItemForm({
                       : value,
                   }))
                 }
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder={`Choose ${field.label.toLowerCase()}`} />
-                </SelectTrigger>
-                <SelectContent>
+                >
+                  <SelectTrigger className="w-full">
+                    <span className="truncate text-left text-sm">
+                      {selectedRelation?.label ?? `Choose ${field.label.toLowerCase()}`}
+                    </span>
+                  </SelectTrigger>
+                  <SelectContent>
                   {(relationOptions?.[field.key] ?? []).map((option) => (
                     <SelectItem key={option.id} value={option.id}>
                       {option.label}
@@ -182,12 +206,7 @@ export function ItemForm({
                 <button
                   type="button"
                   className="rounded-full border border-border/70 px-3 py-1 text-sm text-muted-foreground transition hover:bg-muted"
-                  onClick={() =>
-                    setValues((current) => ({
-                      ...current,
-                      [field.key]: null,
-                    }))
-                  }
+                  onClick={() => clearValue(field.key)}
                 >
                   {selectedRelation.label} ×
                 </button>
@@ -223,7 +242,7 @@ export function ItemForm({
 
         return (
           <div key={field.key} className="space-y-2">
-            <Label>{field.label}</Label>
+            <Label>{fieldLabel}</Label>
             <Input
               type={field.type === "number" ? "number" : field.type === "date" ? "date" : field.type === "url" ? "url" : "text"}
               required={field.required}
