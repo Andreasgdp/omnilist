@@ -69,6 +69,11 @@ const quickAddFieldTypes: Array<{ label: string; type: FieldType }> = [
   { label: "Linked item", type: "relation" },
 ];
 
+const defaultFields: FieldDefinition[] = [
+  { key: "title", label: "Title", type: "text", required: true },
+  { key: "description", label: "Description", type: "text", required: false },
+];
+
 export function ListSchemaForm({
   name = "schema",
   initialFields,
@@ -81,9 +86,7 @@ export function ListSchemaForm({
   allowReorder?: boolean;
 }) {
   const [fields, setFields] = useState<FieldDefinition[]>(
-    initialFields && initialFields.length > 0
-      ? initialFields
-      : [{ key: "title", label: "Title", type: "text", required: true }],
+    initialFields && initialFields.length > 0 ? initialFields : defaultFields,
   );
 
   const updateField = (index: number, nextField: FieldDefinition) => {

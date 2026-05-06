@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 
+import { Plus, Settings2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,8 +57,9 @@ export function FieldHeaderEditor({
 
   return (
     <Popover>
-      <PopoverTrigger render={<Button variant="ghost" size="sm" className="h-auto justify-start px-0 font-medium text-foreground hover:bg-transparent" />}>
-        {field.label}
+      <PopoverTrigger render={<Button variant="ghost" size="sm" className="h-auto justify-start gap-1 px-0 font-medium text-foreground hover:bg-transparent" />}>
+        <span>{field.label}</span>
+        <Settings2 className="size-3.5 text-muted-foreground" />
       </PopoverTrigger>
       <PopoverContent align="start" className="w-80">
         <PopoverHeader>
@@ -131,8 +133,8 @@ export function FieldHeaderEditor({
             <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
             <input type="hidden" name="listId" value={listId} />
             <input type="hidden" name="originalKey" value={field.key} />
-            <Button type="submit" size="sm" variant="ghost" className="rounded-full text-muted-foreground">
-              Remove
+            <Button type="submit" size="icon-sm" variant="ghost" className="rounded-full text-muted-foreground" aria-label={`Remove ${field.label} field`}>
+              <Trash2 className="size-4" />
             </Button>
           </form>
         ) : null}
@@ -158,7 +160,13 @@ export function AddFieldButton({
 
   return (
     <Popover>
-      <PopoverTrigger render={<Button variant="outline" size="icon-sm" className="rounded-full">+</Button>} />
+      <PopoverTrigger
+        render={
+          <Button variant="outline" size="icon-sm" className="rounded-full" aria-label="Add field">
+            <Plus className="size-4" />
+          </Button>
+        }
+      />
       <PopoverContent align="end" className="w-80">
         <PopoverHeader>
           <PopoverTitle>Add field</PopoverTitle>
