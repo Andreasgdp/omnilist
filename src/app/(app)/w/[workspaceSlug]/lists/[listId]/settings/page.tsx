@@ -1,4 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { updateListAction } from "@/features/lists/server/actions";
+import { getListsForWorkspace } from "@/features/lists/server/queries";
+import { CreateListForm } from "@/features/lists/ui/create-list-form";
 import { getListDetail } from "@/features/lists/server/queries";
 import { requireWorkspaceAccess } from "@/features/workspaces/server/access";
 
@@ -19,18 +22,33 @@ export default async function ListSettingsPage({
     return null;
   }
 
+  const availableLists = await getListsForWorkspace({
+    workspaceId: workspace.id,
+    userId: session.user.id,
+  });
+
   return (
-    <Card>
+    <Card className="border-border/60 bg-card/90 shadow-sm">
       <CardHeader>
-        <CardTitle>List settings</CardTitle>
+        <CardTitle>Customize list</CardTitle>
         <CardDescription>
-          Schema editing and advanced controls can grow here. The current definition is shown below.
+          Change the name, visibility, and fields in one place. Keep it simple now and refine it as the list grows.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <pre className="overflow-x-auto rounded-lg bg-muted p-4 text-xs">
-          {JSON.stringify(detail.fields, null, 2)}
-        </pre>
+        <CreateListForm
+          action={updateListAction}
+          workspaceId={workspace.id}
+          workspaceSlug={workspace.slug}
+          listId={detail.list.id}
+          initialName={detail.list.name}
+          initialDescription={detail.list.description}
+          initialVisibility={detail.list.visibility}
+          initialFields={detail.fields}
+          availableLists={availableLists.map((list) => ({ id: list.id, name: list.name }))}
+          submitLabel="Save changes"
+          allowReorder
+        />
       </CardContent>
     </Card>
   );

@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 
 import { ThemeProvider } from "@/shared/ui/theme-provider";
 import "./globals.css";
+import "@blocknote/core/fonts/inter.css";
+import "@blocknote/mantine/style.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

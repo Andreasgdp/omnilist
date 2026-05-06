@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getListDetail } from "@/features/lists/server/queries";
-import { ItemCreateForm } from "@/features/lists/ui/item-create-form";
+import { getListsForWorkspace } from "@/features/lists/server/queries";
 import { ListFilters } from "@/features/lists/ui/list-filters";
 import { ListTable } from "@/features/lists/ui/list-table";
 import { SaveViewForm } from "@/features/lists/ui/save-view-form";
@@ -31,6 +31,11 @@ export default async function ListPage({
     return null;
   }
 
+  const availableLists = await getListsForWorkspace({
+    workspaceId: workspace.id,
+    userId: session.user.id,
+  });
+
   return (
     <div className="space-y-6">
       <Card className="border-border/60 bg-card/90 shadow-sm">
@@ -47,7 +52,7 @@ export default async function ListPage({
             </div>
           </div>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3 sm:flex-row">
+        <CardContent className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
           <NavLink className="inline-flex h-10 items-center justify-center rounded-full border border-border/70 px-4 text-sm font-medium transition hover:-translate-y-0.5 hover:bg-muted" href={routes.listSettings(workspace.slug, detail.list.id)}>
             Settings
           </NavLink>
@@ -78,7 +83,19 @@ export default async function ListPage({
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.5fr_1fr]">
-        <ListTable fields={detail.fields} items={detail.items} />
+        <ListTable
+          fields={detail.fields}
+          items={detail.items}
+          relatedById={detail.relatedById}
+          workspaceId={workspace.id}
+          workspaceSlug={workspace.slug}
+          listId={detail.list.id}
+          relationOptions={detail.relationOptions}
+          availableLists={availableLists
+            .filter((list) => list.id !== detail.list.id)
+            .map((list) => ({ id: list.id, name: list.name }))}
+          canEditSchema={detail.role === "owner" || detail.role === "editor"}
+        />
 
         <div className="space-y-6">
           <SaveViewForm
@@ -89,12 +106,14 @@ export default async function ListPage({
           />
 
           {detail.role === "owner" || detail.role === "editor" ? (
-            <ItemCreateForm
-              workspaceId={workspace.id}
-              workspaceSlug={workspace.slug}
-              listId={detail.list.id}
-              fields={detail.fields}
-            />
+            <Card className="border-border/60 bg-card/90 shadow-sm">
+              <CardHeader>
+                <CardTitle>Open an item to edit</CardTitle>
+                <CardDescription>
+                  Hover between rows or use the bottom + button to add items where you want them. Click the first column to open any item.
+                </CardDescription>
+              </CardHeader>
+            </Card>
           ) : (
             <Card>
               <CardHeader>

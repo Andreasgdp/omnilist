@@ -1,6 +1,6 @@
 "use server";
 
-import { and, eq } from "drizzle-orm";
+import { and, count, eq, gte, sql } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
@@ -15,6 +15,25 @@ import { canEditList, canShareRole, compareListRoles } from "@/shared/lib/permis
 import { routes } from "@/shared/lib/routes";
 
 const createId = () => crypto.randomUUID();
+
+const createFieldKey = (label: string) =>
+  label
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "") || "field";
+
+const ensureUniqueFieldKey = (existingKeys: Set<string>, desiredKey: string) => {
+  let nextKey = desiredKey;
+  let suffix = 2;
+
+  while (existingKeys.has(nextKey)) {
+    nextKey = `${desiredKey}_${suffix}`;
+    suffix += 1;
+  }
+
+  return nextKey;
+};
 
 const listInputSchema = z.object({
   workspaceId: z.string().uuid(),
@@ -65,11 +84,242 @@ export const createListAction = async (formData: FormData) => {
   redirect(routes.list(input.workspaceSlug, listId));
 };
 
+const updateListSchema = listInputSchema.extend({
+  listId: z.string().uuid(),
+});
+
+export const updateListAction = async (formData: FormData) => {
+  const session = await requireApprovedSession();
+  const input = updateListSchema.parse(Object.fromEntries(formData));
+  const fields = listSchemaDefinitionSchema.parse(JSON.parse(input.schema));
+
+  const workspaceMembership = await db.query.workspaceMembers.findFirst({
+    where: and(
+      eq(workspaceMembers.workspaceId, input.workspaceId),
+      eq(workspaceMembers.userId, session.user.id),
+    ),
+  });
+
+  if (!workspaceMembership) {
+    throw new Error("Workspace access denied");
+  }
+
+  const access = await requireListAccess({
+    listId: input.listId,
+    userId: session.user.id,
+    workspaceId: input.workspaceId,
+    workspaceRole: workspaceMembership.role,
+  });
+
+  if (!canEditList(access.role)) {
+    throw new Error("List edit access denied");
+  }
+
+  await db
+    .update(lists)
+    .set({
+      name: input.name,
+      description: input.description,
+      visibility: input.visibility,
+      schema: fields,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(lists.id, input.listId), eq(lists.workspaceId, input.workspaceId)));
+
+  revalidatePath(routes.workspaceLists(input.workspaceSlug));
+  revalidatePath(routes.list(input.workspaceSlug, input.listId));
+  revalidatePath(routes.listSettings(input.workspaceSlug, input.listId));
+  redirect(routes.list(input.workspaceSlug, input.listId));
+};
+
+const quickAddFieldSchema = z.object({
+  listId: z.string().uuid(),
+  workspaceId: z.string().uuid(),
+  workspaceSlug: z.string().min(1),
+  label: z.string().min(1),
+  type: z.enum(["text", "boolean", "select", "date", "relation"]),
+  targetListId: z.string().uuid().optional(),
+});
+
+export const quickAddFieldAction = async (formData: FormData) => {
+  const session = await requireApprovedSession();
+  const input = quickAddFieldSchema.parse(Object.fromEntries(formData));
+
+  const workspaceMembership = await db.query.workspaceMembers.findFirst({
+    where: and(
+      eq(workspaceMembers.workspaceId, input.workspaceId),
+      eq(workspaceMembers.userId, session.user.id),
+    ),
+  });
+
+  if (!workspaceMembership) {
+    throw new Error("Workspace access denied");
+  }
+
+  const access = await requireListAccess({
+    listId: input.listId,
+    userId: session.user.id,
+    workspaceId: input.workspaceId,
+    workspaceRole: workspaceMembership.role,
+  });
+
+  if (!canEditList(access.role)) {
+    throw new Error("List edit access denied");
+  }
+
+  const fields = listSchemaDefinitionSchema.parse(access.list.schema);
+  const existingKeys = new Set(fields.map((field) => field.key));
+  const nextField = {
+    key: ensureUniqueFieldKey(existingKeys, createFieldKey(input.label)),
+    label: input.label,
+    type: input.type,
+    required: false,
+    ...(input.type === "select"
+      ? {
+          options: [
+            { label: "Option 1", value: "option_1" },
+            { label: "Option 2", value: "option_2" },
+          ],
+        }
+      : {}),
+    ...(input.type === "relation" && input.targetListId
+      ? {
+          targetListId: input.targetListId,
+        }
+      : {}),
+  };
+
+  listSchemaDefinitionSchema.parse([nextField]);
+
+  await db
+    .update(lists)
+    .set({
+      schema: [...fields, nextField],
+      updatedAt: new Date(),
+    })
+    .where(and(eq(lists.id, input.listId), eq(lists.workspaceId, input.workspaceId)));
+
+  revalidatePath(routes.list(input.workspaceSlug, input.listId));
+  revalidatePath(routes.listSettings(input.workspaceSlug, input.listId));
+};
+
+const saveFieldSchema = z.object({
+  listId: z.string().uuid(),
+  workspaceId: z.string().uuid(),
+  workspaceSlug: z.string().min(1),
+  originalKey: z.string().min(1),
+  field: z.string(),
+});
+
+export const saveFieldAction = async (formData: FormData) => {
+  const session = await requireApprovedSession();
+  const input = saveFieldSchema.parse(Object.fromEntries(formData));
+
+  const workspaceMembership = await db.query.workspaceMembers.findFirst({
+    where: and(
+      eq(workspaceMembers.workspaceId, input.workspaceId),
+      eq(workspaceMembers.userId, session.user.id),
+    ),
+  });
+
+  if (!workspaceMembership) {
+    throw new Error("Workspace access denied");
+  }
+
+  const access = await requireListAccess({
+    listId: input.listId,
+    userId: session.user.id,
+    workspaceId: input.workspaceId,
+    workspaceRole: workspaceMembership.role,
+  });
+
+  if (!canEditList(access.role)) {
+    throw new Error("List edit access denied");
+  }
+
+  const fields = listSchemaDefinitionSchema.parse(access.list.schema);
+  const fieldIndex = fields.findIndex((field) => field.key === input.originalKey);
+
+  if (fieldIndex === -1) {
+    throw new Error("Field not found");
+  }
+
+  const [nextField] = listSchemaDefinitionSchema.parse([JSON.parse(input.field)]);
+  const nextFields = [...fields];
+  nextFields[fieldIndex] = nextField;
+  listSchemaDefinitionSchema.parse(nextFields);
+
+  await db
+    .update(lists)
+    .set({
+      schema: nextFields,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(lists.id, input.listId), eq(lists.workspaceId, input.workspaceId)));
+
+  revalidatePath(routes.list(input.workspaceSlug, input.listId));
+  revalidatePath(routes.listSettings(input.workspaceSlug, input.listId));
+};
+
+const deleteFieldSchema = z.object({
+  listId: z.string().uuid(),
+  workspaceId: z.string().uuid(),
+  workspaceSlug: z.string().min(1),
+  originalKey: z.string().min(1),
+});
+
+export const deleteFieldAction = async (formData: FormData) => {
+  const session = await requireApprovedSession();
+  const input = deleteFieldSchema.parse(Object.fromEntries(formData));
+
+  const workspaceMembership = await db.query.workspaceMembers.findFirst({
+    where: and(
+      eq(workspaceMembers.workspaceId, input.workspaceId),
+      eq(workspaceMembers.userId, session.user.id),
+    ),
+  });
+
+  if (!workspaceMembership) {
+    throw new Error("Workspace access denied");
+  }
+
+  const access = await requireListAccess({
+    listId: input.listId,
+    userId: session.user.id,
+    workspaceId: input.workspaceId,
+    workspaceRole: workspaceMembership.role,
+  });
+
+  if (!canEditList(access.role)) {
+    throw new Error("List edit access denied");
+  }
+
+  const fields = listSchemaDefinitionSchema.parse(access.list.schema);
+
+  if (fields.length <= 1) {
+    throw new Error("Lists need at least one field");
+  }
+
+  const nextFields = fields.filter((field) => field.key !== input.originalKey);
+
+  await db
+    .update(lists)
+    .set({
+      schema: nextFields,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(lists.id, input.listId), eq(lists.workspaceId, input.workspaceId)));
+
+  revalidatePath(routes.list(input.workspaceSlug, input.listId));
+  revalidatePath(routes.listSettings(input.workspaceSlug, input.listId));
+};
+
 const itemInputSchema = z.object({
   listId: z.string().uuid(),
   workspaceId: z.string().uuid(),
   workspaceSlug: z.string().min(1),
   payload: z.string(),
+  insertAt: z.coerce.number().int().min(0).optional(),
 });
 
 export const createItemAction = async (formData: FormData) => {
@@ -102,14 +352,164 @@ export const createItemAction = async (formData: FormData) => {
   const fields = listSchemaDefinitionSchema.parse(access.list.schema);
   const itemSchema = buildItemSchema(fields);
   const data = itemSchema.parse(payload);
+  const [{ value: itemCount }] = await db
+    .select({ value: count() })
+    .from(listItems)
+    .where(eq(listItems.listId, input.listId));
+  const insertAt = input.insertAt ?? itemCount;
+
+  await db
+    .update(listItems)
+    .set({
+      sortOrder: sql`${listItems.sortOrder} + 1`,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(listItems.listId, input.listId), gte(listItems.sortOrder, insertAt)));
 
   await db.insert(listItems).values({
     id: createId(),
     listId: input.listId,
     createdBy: session.user.id,
     updatedBy: session.user.id,
+    sortOrder: insertAt,
     data,
   });
+
+  revalidatePath(routes.list(input.workspaceSlug, input.listId));
+};
+
+const updateItemInputSchema = itemInputSchema.extend({
+  itemId: z.string().uuid(),
+});
+
+export const updateItemAction = async (formData: FormData) => {
+  const session = await requireApprovedSession();
+  const input = updateItemInputSchema.parse(Object.fromEntries(formData));
+
+  const workspaceMembership = await db.query.workspaceMembers.findFirst({
+    where: and(
+      eq(workspaceMembers.workspaceId, input.workspaceId),
+      eq(workspaceMembers.userId, session.user.id),
+    ),
+  });
+
+  if (!workspaceMembership) {
+    throw new Error("Workspace access denied");
+  }
+
+  const access = await requireListAccess({
+    listId: input.listId,
+    userId: session.user.id,
+    workspaceId: input.workspaceId,
+    workspaceRole: workspaceMembership.role,
+  });
+
+  if (!canEditList(access.role)) {
+    throw new Error("List edit access denied");
+  }
+
+  const payload = JSON.parse(input.payload) as Record<string, unknown>;
+  const fields = listSchemaDefinitionSchema.parse(access.list.schema);
+  const itemSchema = buildItemSchema(fields);
+  const data = itemSchema.parse(payload);
+
+  await db
+    .update(listItems)
+    .set({
+      data,
+      updatedBy: session.user.id,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(listItems.id, input.itemId), eq(listItems.listId, input.listId)));
+
+  revalidatePath(routes.list(input.workspaceSlug, input.listId));
+};
+
+const deleteItemInputSchema = z.object({
+  itemId: z.string().uuid(),
+  listId: z.string().uuid(),
+  workspaceId: z.string().uuid(),
+  workspaceSlug: z.string().min(1),
+});
+
+export const deleteItemAction = async (formData: FormData) => {
+  const session = await requireApprovedSession();
+  const input = deleteItemInputSchema.parse(Object.fromEntries(formData));
+
+  const workspaceMembership = await db.query.workspaceMembers.findFirst({
+    where: and(
+      eq(workspaceMembers.workspaceId, input.workspaceId),
+      eq(workspaceMembers.userId, session.user.id),
+    ),
+  });
+
+  if (!workspaceMembership) {
+    throw new Error("Workspace access denied");
+  }
+
+  const access = await requireListAccess({
+    listId: input.listId,
+    userId: session.user.id,
+    workspaceId: input.workspaceId,
+    workspaceRole: workspaceMembership.role,
+  });
+
+  if (!canEditList(access.role)) {
+    throw new Error("List edit access denied");
+  }
+
+  await db.delete(listItems).where(and(eq(listItems.id, input.itemId), eq(listItems.listId, input.listId)));
+
+  revalidatePath(routes.list(input.workspaceSlug, input.listId));
+};
+
+const reorderItemsInputSchema = z.object({
+  listId: z.string().uuid(),
+  workspaceId: z.string().uuid(),
+  workspaceSlug: z.string().min(1),
+  orderedItemIds: z.string(),
+});
+
+export const reorderItemsAction = async (formData: FormData) => {
+  const session = await requireApprovedSession();
+  const input = reorderItemsInputSchema.parse(Object.fromEntries(formData));
+
+  const workspaceMembership = await db.query.workspaceMembers.findFirst({
+    where: and(
+      eq(workspaceMembers.workspaceId, input.workspaceId),
+      eq(workspaceMembers.userId, session.user.id),
+    ),
+  });
+
+  if (!workspaceMembership) {
+    throw new Error("Workspace access denied");
+  }
+
+  const access = await requireListAccess({
+    listId: input.listId,
+    userId: session.user.id,
+    workspaceId: input.workspaceId,
+    workspaceRole: workspaceMembership.role,
+  });
+
+  if (!canEditList(access.role)) {
+    throw new Error("List edit access denied");
+  }
+
+  const orderedItemIds = z.array(z.string().uuid()).parse(JSON.parse(input.orderedItemIds));
+
+  await Promise.all(
+    orderedItemIds.map((itemId, index) =>
+      db
+        .update(listItems)
+        .set({
+          sortOrder: index,
+          updatedAt: new Date(),
+          updatedBy: session.user.id,
+        })
+        .where(and(eq(listItems.id, itemId), eq(listItems.listId, input.listId))),
+    ),
+  );
 
   revalidatePath(routes.list(input.workspaceSlug, input.listId));
 };

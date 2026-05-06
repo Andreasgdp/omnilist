@@ -1,5 +1,5 @@
 import { relations } from "drizzle-orm";
-import { index, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
+import { index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex } from "drizzle-orm/pg-core";
 
 import { users } from "@/db/schema/auth";
 import { itemAssets } from "@/db/schema/assets";
@@ -51,12 +51,13 @@ export const listItems = pgTable(
     listId: text("list_id").notNull().references(() => lists.id, { onDelete: "cascade" }),
     createdBy: text("created_by").notNull().references(() => users.id, { onDelete: "cascade" }),
     updatedBy: text("updated_by").notNull().references(() => users.id, { onDelete: "cascade" }),
+    sortOrder: integer("sort_order").notNull().default(0),
     data: jsonb("data").$type<Record<string, unknown>>().notNull().default({}),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => ({
-    listIndex: index("list_items_list_idx").on(table.listId, table.updatedAt),
+    listIndex: index("list_items_list_idx").on(table.listId, table.sortOrder, table.updatedAt),
   }),
 );
 

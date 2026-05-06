@@ -9,7 +9,36 @@ export const fieldTypeSchema = z.enum([
   "select",
   "image",
   "file",
+  "document",
+  "relation",
 ]);
+
+export type FieldType = z.infer<typeof fieldTypeSchema>;
+
+export const fieldTypeLabels: Record<FieldType, string> = {
+  text: "Text",
+  number: "Number",
+  boolean: "Checkbox",
+  date: "Date",
+  url: "Link",
+  select: "Choice",
+  image: "Image",
+  file: "File attachment",
+  document: "Notes",
+  relation: "Linked item",
+};
+
+export const documentBlockSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  props: z.record(z.string(), z.unknown()).optional(),
+  content: z.array(z.unknown()).optional(),
+  children: z.array(z.unknown()).optional(),
+});
+
+export const relationFieldSchema = z.object({
+  targetListId: z.string().uuid(),
+});
 
 export const fieldDefinitionSchema = z.object({
   key: z.string().min(1).regex(/^[a-zA-Z0-9_\-]+$/),
@@ -17,6 +46,7 @@ export const fieldDefinitionSchema = z.object({
   type: fieldTypeSchema,
   required: z.boolean().default(false),
   multiple: z.boolean().optional(),
+  targetListId: z.string().uuid().optional(),
   options: z
     .array(
       z.object({
@@ -46,6 +76,13 @@ export const listSchemaDefinitionSchema = z.array(fieldDefinitionSchema).superRe
         message: `Select field ${field.key} requires options`,
       });
     }
+
+    if (field.type === "relation" && !field.targetListId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: `Relation field ${field.key} requires targetListId`,
+      });
+    }
   }
 });
 
@@ -72,6 +109,10 @@ export const buildItemSchema = (fields: ListSchemaDefinition) => {
             return z.string().min(1);
           case "image":
           case "file":
+            return z.string().uuid();
+          case "document":
+            return z.array(documentBlockSchema);
+          case "relation":
             return z.string().uuid();
         }
       })();

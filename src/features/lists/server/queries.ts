@@ -1,10 +1,10 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, inArray } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import { listItems, listMembers, lists, listViews, workspaceMembers } from "@/db/schema";
 import { parseListQueryState } from "@/features/lists/lib/query-state";
 import { requireListAccess } from "@/features/lists/server/access";
-import { buildItemSchema, listSchemaDefinitionSchema } from "@/shared/lib/list-schema";
+import { buildItemSchema, listSchemaDefinitionSchema, type ListSchemaDefinition } from "@/shared/lib/list-schema";
 
 const compareValues = (left: unknown, right: unknown) => {
   if (typeof left === "number" && typeof right === "number") {
@@ -49,6 +49,94 @@ const applyQueryState = ({
   }
 
   return filtered;
+};
+
+const hydrateRelations = async ({
+  fields,
+  items,
+}: {
+  fields: ListSchemaDefinition;
+  items: Array<{ id: string; data: Record<string, unknown> }>;
+}) => {
+  const relationFields = fields.filter((field) => field.type === "relation");
+
+  if (relationFields.length === 0) {
+    return {
+      items,
+      relatedById: {} as Record<string, { id: string; data: Record<string, unknown> }>,
+    };
+  }
+
+  const ids = new Set<string>();
+  for (const item of items) {
+    for (const field of relationFields) {
+      const rawValue = item.data[field.key];
+
+      if (Array.isArray(rawValue)) {
+        for (const value of rawValue) {
+          if (typeof value === "string") {
+            ids.add(value);
+          }
+        }
+      } else if (typeof rawValue === "string") {
+        ids.add(rawValue);
+      }
+    }
+  }
+
+  if (ids.size === 0) {
+    return {
+      items,
+      relatedById: {} as Record<string, { id: string; data: Record<string, unknown> }>,
+    };
+  }
+
+  const relatedItems = await db.query.listItems.findMany({
+    where: inArray(listItems.id, [...ids]),
+  });
+
+  return {
+    items,
+    relatedById: Object.fromEntries(relatedItems.map((item) => [item.id, item])),
+  };
+};
+
+const buildRelationOptions = async ({
+  fields,
+  workspaceId,
+}: {
+  fields: ListSchemaDefinition;
+  workspaceId: string;
+}) => {
+  const relationFields = fields.filter((field) => field.type === "relation" && field.targetListId);
+
+  if (relationFields.length === 0) {
+    return {} as Record<string, Array<{ id: string; label: string }>>;
+  }
+
+  const targetListIds = [...new Set(relationFields.map((field) => field.targetListId!))];
+  const targetLists = await db.query.lists.findMany({
+    where: inArray(lists.id, targetListIds),
+  });
+  const targetItems = await db.query.listItems.findMany({
+    where: inArray(
+      listItems.listId,
+      targetLists.filter((list) => list.workspaceId === workspaceId).map((list) => list.id),
+    ),
+    orderBy: [asc(listItems.sortOrder), desc(listItems.updatedAt)],
+  });
+
+  const itemsByListId = Object.groupBy(targetItems, (item) => item.listId);
+
+  return Object.fromEntries(
+    relationFields.map((field) => [
+      field.key,
+      (itemsByListId[field.targetListId!] ?? []).map((item) => ({
+        id: item.id,
+        label: String(item.data.title ?? item.data.name ?? item.id),
+      })),
+    ]),
+  );
 };
 
 export const getListsForWorkspace = async ({
@@ -107,7 +195,7 @@ export const getListDetail = async ({
   const itemSchema = buildItemSchema(fields);
   const rawItems = await db.query.listItems.findMany({
     where: eq(listItems.listId, listId),
-    orderBy: [desc(listItems.updatedAt)],
+    orderBy: [asc(listItems.sortOrder), desc(listItems.updatedAt)],
   });
   const views = await db.query.listViews.findMany({
     where: and(eq(listViews.listId, listId), eq(listViews.userId, userId)),
@@ -118,12 +206,22 @@ export const getListDetail = async ({
     items: rawItems,
     queryState,
   });
+  const relations = await hydrateRelations({
+    fields,
+    items,
+  });
+  const relationOptions = await buildRelationOptions({
+    fields,
+    workspaceId,
+  });
 
   return {
     ...access,
     fields,
     itemSchema,
-    items,
+    items: relations.items,
+    relatedById: relations.relatedById,
+    relationOptions,
     queryState,
     views,
   };

@@ -22,6 +22,13 @@
       "when": 1777933584550,
       "tag": "0002_sparkling_punisher",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1778052669650,
+      "tag": "0004_faithful_shen",
+      "breakpoints": true
     }
   ]
 }
