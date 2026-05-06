@@ -8,6 +8,7 @@ import { routes } from "@/shared/lib/routes";
 export default async function SignInPage() {
   const session = await getSession();
   const hasGoogleAuth = Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
+  const hasMagicLinkEmail = Boolean(env.RESEND_API_KEY && env.RESEND_FROM_EMAIL);
 
   if (session) {
     redirect(routes.workspace(env.DEFAULT_SHARED_WORKSPACE_SLUG));
@@ -15,7 +16,7 @@ export default async function SignInPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-6 py-16">
-      <SignInCard hasGoogleAuth={hasGoogleAuth} />
+      <SignInCard hasGoogleAuth={hasGoogleAuth} hasMagicLinkEmail={hasMagicLinkEmail} />
     </div>
   );
 }

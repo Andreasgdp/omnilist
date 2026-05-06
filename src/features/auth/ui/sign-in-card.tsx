@@ -9,10 +9,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { authClient } from "@/features/auth/auth-client";
 
-export function SignInCard({ hasGoogleAuth }: { hasGoogleAuth: boolean }) {
+export function SignInCard({
+  hasGoogleAuth,
+  hasMagicLinkEmail,
+}: {
+  hasGoogleAuth: boolean;
+  hasMagicLinkEmail: boolean;
+}) {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const canSendMagicLink = !isPending && email.trim().length > 0;
 
   return (
     <Card className="w-full max-w-md border border-border/50 bg-card/90 shadow-2xl shadow-primary/10 backdrop-blur">
@@ -34,8 +41,13 @@ export function SignInCard({ hasGoogleAuth }: { hasGoogleAuth: boolean }) {
       <CardContent className="space-y-4">
         {hasGoogleAuth ? (
           <Button
-            className="w-full"
+            className="w-full disabled:pointer-events-none disabled:opacity-50"
+            aria-disabled={isPending}
             onClick={async () => {
+              if (isPending) {
+                return;
+              }
+
               setIsPending(true);
               try {
                 await authClient.signIn.social({ provider: "google", callbackURL: "/" });
@@ -43,7 +55,6 @@ export function SignInCard({ hasGoogleAuth }: { hasGoogleAuth: boolean }) {
                 setIsPending(false);
               }
             }}
-            disabled={isPending}
           >
             Continue with Google
           </Button>
@@ -62,9 +73,13 @@ export function SignInCard({ hasGoogleAuth }: { hasGoogleAuth: boolean }) {
 
         <Button
           variant="outline"
-          className="w-full"
-          disabled={isPending || !email}
+          className="w-full aria-disabled:pointer-events-none aria-disabled:opacity-50"
+          aria-disabled={!canSendMagicLink}
           onClick={async () => {
+            if (!canSendMagicLink) {
+              return;
+            }
+
             setIsPending(true);
             setMessage(null);
 
@@ -84,6 +99,16 @@ export function SignInCard({ hasGoogleAuth }: { hasGoogleAuth: boolean }) {
         >
           Email me a magic link
         </Button>
+
+        {!hasMagicLinkEmail ? (
+          <p className="text-sm text-muted-foreground">
+            Email delivery is not configured in this environment. After requesting a magic link locally, open
+            {" "}
+            <code>/api/dev/magic-link</code>
+            {" "}
+            to copy the latest generated link.
+          </p>
+        ) : null}
 
         {message ? <p className="text-sm text-muted-foreground">{message}</p> : null}
       </CardContent>

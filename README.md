@@ -189,6 +189,14 @@ Google sign-in is optional.
 
 If `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are not set, the Google button is hidden.
 
+Magic link email delivery is handled by your app code via `Resend`, not by Better Auth's hosted email product. If `RESEND_API_KEY` and `RESEND_FROM_EMAIL` are missing in local development, Omnilist falls back to storing the most recent magic link at:
+
+```text
+/api/dev/magic-link
+```
+
+That route is intended for local development only and returns `404` in production.
+
 In Google Cloud Console, create a Web OAuth client and use:
 
 Authorized JavaScript origins:
