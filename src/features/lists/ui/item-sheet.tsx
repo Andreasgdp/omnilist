@@ -45,7 +45,7 @@ export function ItemSheet({
 
   return (
     <Sheet>
-      <SheetTrigger render={trigger} />
+      <SheetTrigger render={<span />} nativeButton={false}>{trigger}</SheetTrigger>
       <SheetContent side={viewMode === "center" ? "center" : "right"} className={viewMode === "center" ? "overflow-y-auto" : "w-full overflow-y-auto sm:max-w-2xl"}>
         <SheetHeader className="border-b border-border/60 pb-5 pr-14">
           <div className="flex flex-wrap items-center justify-between gap-3">

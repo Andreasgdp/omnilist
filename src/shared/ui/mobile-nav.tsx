@@ -1,8 +1,10 @@
 "use client";
 
-import { Home, Layers3, Plus, Sparkles } from "lucide-react";
+import { Home, Layers3, LogOut, PanelLeftOpen, Plus, Sparkles } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { signOutAction } from "@/features/auth/server/sign-out";
 import { NavLink } from "@/shared/ui/nav-link";
 import { routes } from "@/shared/lib/routes";
 
@@ -29,7 +31,7 @@ export function MobileNav({ workspaceSlug }: { workspaceSlug: string }) {
           </SheetTrigger>
           <SheetContent side="bottom" className="rounded-t-[2rem]">
             <SheetHeader>
-              <SheetTitle>Quick actions</SheetTitle>
+              <SheetTitle>Workspace</SheetTitle>
             </SheetHeader>
             <div className="mt-6 flex flex-col gap-3">
               <NavLink href={routes.workspace(workspaceSlug)} className="rounded-2xl border border-border/60 px-4 py-4 text-sm font-medium transition hover:bg-muted">
@@ -41,6 +43,19 @@ export function MobileNav({ workspaceSlug }: { workspaceSlug: string }) {
               <NavLink href={routes.newList(workspaceSlug)} className="rounded-2xl border border-border/60 px-4 py-4 text-sm font-medium transition hover:bg-muted">
                 Create a new list
               </NavLink>
+              <div className="rounded-2xl border border-border/60 bg-card/70 p-4">
+                <div className="mb-3 flex items-center gap-3 text-sm text-muted-foreground">
+                  <PanelLeftOpen className="size-4" />
+                  <span>Desktop sidebar</span>
+                </div>
+                <p className="text-sm text-muted-foreground">On larger screens, navigation, workspace info, and account controls now live in the left sidebar.</p>
+              </div>
+              <form action={signOutAction}>
+                <Button type="submit" variant="outline" className="h-12 w-full rounded-2xl justify-start px-4 text-sm font-medium">
+                  <LogOut className="size-4" />
+                  Sign out
+                </Button>
+              </form>
             </div>
           </SheetContent>
         </Sheet>

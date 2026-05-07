@@ -30,8 +30,7 @@ export default async function ListItemPage({
   const title = typeof detail.item.data.title === "string" ? detail.item.data.title : "Untitled item";
 
   return (
-    <div className="relative left-1/2 w-screen max-w-none -translate-x-1/2 px-4 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-5xl space-y-8 py-4">
+    <div className="mx-auto max-w-4xl space-y-6 py-2 sm:py-4">
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
           <div className="flex min-w-0 items-center gap-2">
             <NavLink href={routes.list(workspace.slug, listId)} className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 transition hover:bg-muted hover:text-foreground">
@@ -43,12 +42,12 @@ export default async function ListItemPage({
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-2">
           <h1 className="max-w-4xl text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">{title}</h1>
-          <p className="text-sm text-muted-foreground">Edit this item as a full page when you want more room than the peek views.</p>
+          <p className="text-sm text-muted-foreground">A roomier page for structured properties and longer notes.</p>
         </div>
 
-        <div className="rounded-[2rem] border border-border/60 bg-card/75 p-6 shadow-sm shadow-primary/5 backdrop-blur-sm sm:p-8">
+        <div className="rounded-[2rem] border border-border/60 bg-card/60 p-5 shadow-sm shadow-primary/5 backdrop-blur-sm sm:p-6">
           <ItemForm
             mode="edit"
             workspaceId={workspace.id}
@@ -72,7 +71,6 @@ export default async function ListItemPage({
             </Button>
           </form>
         </div>
-      </div>
     </div>
   );
 }

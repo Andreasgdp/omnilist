@@ -12,7 +12,7 @@ export default async function WorkspaceLayout({
   const { session, workspace } = await requireWorkspaceAccess(workspaceSlug);
 
   return (
-    <AppShell workspaceName={workspace.name} workspaceSlug={workspace.slug} userName={session.user.name}>
+    <AppShell workspaceName={workspace.name} workspaceSlug={workspace.slug} userName={session.user.name} userImage={session.user.image}>
       {children}
     </AppShell>
   );

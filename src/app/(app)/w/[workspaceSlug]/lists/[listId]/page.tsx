@@ -47,8 +47,7 @@ export default async function ListPage({
   const itemViewMode = detail.queryState.itemView;
 
   return (
-    <div className="relative left-1/2 w-screen max-w-none -translate-x-1/2 px-4 sm:px-6 lg:px-8">
-      <div className="space-y-5">
+    <div className="space-y-5">
         <ListBreadcrumbs
           workspaceSlug={workspace.slug}
           workspaceName={workspace.name}
@@ -152,7 +151,6 @@ export default async function ListPage({
           canEditSchema={canEdit}
           itemViewMode={itemViewMode}
         />
-      </div>
     </div>
   );
 }

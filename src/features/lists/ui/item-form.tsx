@@ -71,7 +71,7 @@ export function ItemForm({
   const pageContentValue = Array.isArray(values[itemPageContentKey]) ? (values[itemPageContentKey] as DocumentBlock[]) : undefined;
 
   return (
-    <form action={action} className="space-y-4">
+    <form action={action} className="space-y-5">
       <input type="hidden" name="workspaceId" value={workspaceId} />
       <input type="hidden" name="workspaceSlug" value={workspaceSlug} />
       <input type="hidden" name="listId" value={listId} />
@@ -86,6 +86,7 @@ export function ItemForm({
         </div>
       ) : null}
 
+      <div className="space-y-2">
       {orderedFields.map((field) => {
         const fieldLabel = (
           <span className="inline-flex items-center gap-2">
@@ -101,16 +102,17 @@ export function ItemForm({
         const isDescriptionField = field.key === descriptionField?.key;
         const surfaceClassName = isTitleField || isDescriptionField
           ? "space-y-2"
-          : "rounded-2xl border border-border/60 bg-card/60 p-4 shadow-sm shadow-primary/5";
+          : "grid gap-3 rounded-xl px-1 py-2 sm:grid-cols-[180px_minmax(0,1fr)] sm:items-start";
 
         if (field.type === "boolean") {
           return (
-            <div key={field.key} className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+            <div key={field.key} className="grid gap-3 rounded-xl px-1 py-2 sm:grid-cols-[180px_minmax(0,1fr)] sm:items-center">
               <div className="flex items-center justify-between gap-4">
                 <div className="space-y-1">
                   <Label>{fieldLabel}</Label>
-                  <p className="text-xs text-muted-foreground">Turn this on if it applies.</p>
                 </div>
+              </div>
+              <div className="flex min-h-8 items-center">
                 <Switch
                   checked={Boolean(values[field.key])}
                   onCheckedChange={(checked) =>
@@ -138,7 +140,7 @@ export function ItemForm({
                   }))
                 }
               >
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full rounded-xl">
                   <span className="truncate text-left text-sm">
                     {field.multiple
                       ? selectedValues.length > 0
@@ -157,7 +159,7 @@ export function ItemForm({
               </Select>
 
               {field.multiple && selectedValues.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 pt-1">
                   {selectedValues.map((selectedValue) => {
                     const selectedOption = field.options?.find((option) => option.value === selectedValue);
                     return (
@@ -187,12 +189,12 @@ export function ItemForm({
         if (field.type === "text") {
           return (
             <div key={field.key} className={surfaceClassName}>
-              <Label>{fieldLabel}</Label>
+              <Label className={isTitleField || isDescriptionField ? undefined : "pt-2 text-sm text-muted-foreground"}>{fieldLabel}</Label>
               <Textarea
                 required={field.required}
                 placeholder={getFieldPlaceholder(field)}
                 value={typeof values[field.key] === "string" ? (values[field.key] as string) : ""}
-                className={isTitleField ? "min-h-[5.5rem] border-0 bg-transparent px-0 text-3xl font-semibold leading-tight shadow-none focus-visible:ring-0 sm:text-4xl" : isDescriptionField ? "min-h-[4.5rem] border-border/60 bg-muted/15" : undefined}
+                className={isTitleField ? "min-h-[4.8rem] border-0 bg-transparent px-0 text-3xl font-semibold leading-tight shadow-none focus-visible:ring-0 sm:text-4xl" : isDescriptionField ? "min-h-[3.25rem] rounded-xl border-0 bg-transparent px-0 text-muted-foreground shadow-none focus-visible:ring-0" : "min-h-[2.75rem] rounded-xl border-border/60 bg-background/55"}
                 onChange={(event) =>
                   setValues((current) => ({ ...current, [field.key]: event.target.value }))
                 }
@@ -204,8 +206,10 @@ export function ItemForm({
         if (field.type === "document") {
           return (
             <div key={field.key} className={surfaceClassName}>
-              <Label>{fieldLabel}</Label>
-              <p className="text-xs text-muted-foreground">Add richer notes, ideas, or steps.</p>
+              <div className="space-y-1 pt-2">
+                <Label className="text-sm text-muted-foreground">{fieldLabel}</Label>
+                <p className="text-xs text-muted-foreground">Add richer notes, ideas, or steps.</p>
+              </div>
               <DocumentEditor
                 value={Array.isArray(values[field.key]) ? (values[field.key] as never[]) : undefined}
                 onChange={(blocks) => {
@@ -225,7 +229,7 @@ export function ItemForm({
 
           return (
             <div key={field.key} className={surfaceClassName}>
-              <Label>{fieldLabel}</Label>
+              <Label className="pt-2 text-sm text-muted-foreground">{fieldLabel}</Label>
                 <Select
                   value={field.multiple ? undefined : selectedRelationId ?? undefined}
                   onValueChange={(value) =>
@@ -237,7 +241,7 @@ export function ItemForm({
                   }))
                 }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full rounded-xl">
                     <span className="truncate text-left text-sm">
                       {selectedRelation?.label ?? `Choose ${field.label.toLowerCase()}`}
                     </span>
@@ -262,7 +266,7 @@ export function ItemForm({
               ) : null}
 
               {selectedRelationIds.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 pt-1">
                   {selectedRelationIds.map((relationId) => {
                     const match = relationOptions?.[field.key]?.find((option) => option.id === relationId);
                     return (
@@ -291,13 +295,13 @@ export function ItemForm({
 
         return (
           <div key={field.key} className={surfaceClassName}>
-            <Label>{fieldLabel}</Label>
+            <Label className={isTitleField ? undefined : "pt-2 text-sm text-muted-foreground"}>{fieldLabel}</Label>
             <Input
               type={field.type === "number" ? "number" : field.type === "date" ? "date" : field.type === "url" ? "url" : "text"}
               required={field.required}
               placeholder={getFieldPlaceholder(field)}
               value={typeof values[field.key] === "string" || typeof values[field.key] === "number" ? String(values[field.key]) : ""}
-              className={isTitleField ? "h-14 border-0 bg-transparent px-0 text-3xl font-semibold shadow-none focus-visible:ring-0 sm:text-4xl" : undefined}
+              className={isTitleField ? "h-14 border-0 bg-transparent px-0 text-3xl font-semibold shadow-none focus-visible:ring-0 sm:text-4xl" : "rounded-xl border-border/60 bg-background/55"}
               onChange={(event) =>
                 setValues((current) => ({
                   ...current,
@@ -308,9 +312,10 @@ export function ItemForm({
           </div>
         );
       })}
+      </div>
 
-      <div className="space-y-3 pt-3">
-        <div className="border-t border-border/55 pt-5">
+      <div className="space-y-3 pt-1">
+        <div className="border-t border-border/55 pt-4">
           <div className="space-y-1">
             <Label className="text-sm font-medium">Page content</Label>
             <p className="text-sm text-muted-foreground">Write freely here with richer notes, structure, media, tables, and commands.</p>
